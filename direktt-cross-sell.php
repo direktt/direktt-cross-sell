@@ -24,7 +24,8 @@ add_action('init', 'direktt_cross_sell_register_custom_post_types');
 
 //Custom Database Table
 register_activation_hook(__FILE__, 'direktt_cross_sell_create_issued_database_table');
-register_activation_hook(__FILE__, 'direktt_cross_sell_create_used_database_table');
+register_activation_hook(__FILE__, 'direktt_cross_sell_create_used_individual_database_table');
+register_activation_hook(__FILE__, 'direktt_cross_sell_create_used_bulk_database_table');
 
 //Cross-Sell Partner Meta Boxes
 add_action('add_meta_boxes', 'direktt_cross_sell_partners_add_custom_box');
@@ -659,12 +660,12 @@ function direktt_cross_sell_create_issued_database_table()
     $wpdb->query($the_default_timestamp_query);
 }
 
-function direktt_cross_sell_create_used_database_table()
+function direktt_cross_sell_create_used_individual_database_table()
 {
     // Table for used coupons
     global $wpdb;
 
-    $table_name = $wpdb->prefix . 'direktt_cross_sell_used';
+    $table_name = $wpdb->prefix . 'direktt_cross_sell_used_individual';
 
     $charset_collate = $wpdb->get_charset_collate();
 
@@ -676,6 +677,37 @@ function direktt_cross_sell_create_used_database_table()
   			PRIMARY KEY  (ID),
   			KEY issued_id (issued_id),
             KEY direktt_validator_user_id (direktt_validator_user_id),
+            KEY coupon_used_time (coupon_used_time)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 $charset_collate;";
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta($sql);
+
+    $the_default_timestamp_query = "ALTER TABLE $table_name MODIFY COLUMN coupon_used_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP;";
+
+    $wpdb->query($the_default_timestamp_query);
+}
+
+function direktt_cross_sell_create_used_bulk_database_table()
+{
+    // Table for used coupons
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'direktt_cross_sell_used_bulk';
+
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE $table_name (
+  			ID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            issued_id varchar(256) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+            partner_id varchar(256) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  			direktt_validator_user_id varchar(256) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+            direktt_receiver_user_id varchar(256) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+            coupon_used_time timestamp NOT NULL,
+  			PRIMARY KEY  (ID),
+  			KEY issued_id (issued_id),
+            KEY partner_id (partner_id),
+            KEY direktt_validator_user_id (direktt_validator_user_id),
+            KEY direktt_receiver_user_id (direktt_receiver_user_id),
             KEY coupon_used_time (coupon_used_time)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 $charset_collate;";
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -739,13 +771,7 @@ function direktt_cross_sell_get_partners_individual()
 
             // If limit, get count of valid issued for this group
             if ($max_issuance > 0) {
-                $table = $wpdb->prefix . 'direktt_cross_sell_issued';
-                $issued_count = (int)$wpdb->get_var(
-                    $wpdb->prepare(
-                        "SELECT COUNT(*) FROM $table WHERE coupon_group_id = %d AND coupon_valid = 1",
-                        $group_id
-                    )
-                );
+                $issued_count = direktt_cross_sell_get_issue_count($group_id, $post->ID);
                 // Omit group if fully issued
                 if ($issued_count >= $max_issuance) continue;
             }
@@ -796,18 +822,13 @@ function direktt_cross_sell_get_partner_individual_coupon_groups($partner_id)
         $max_issuance = get_post_meta($gid, 'direktt_cross_sell_max_issuance', true);
         $max_issuance = (string)$max_issuance === '' ? 0 : intval($max_issuance);
 
-        if ($max_issuance > 0) {
-            $table = $wpdb->prefix . 'direktt_cross_sell_issued';
-            $issued_count = (int)$wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT COUNT(*) FROM $table WHERE coupon_group_id = %d AND coupon_valid = 1",
-                    $gid
-                )
-            );
-            if ($issued_count >= $max_issuance) continue;
+        $issued_count = direktt_cross_sell_get_issue_count($gid, $partner_id);
+    
+        if ($max_issuance > 0 && $issued_count >= $max_issuance) {
+            continue;
+        } else {
+            $eligible_group_ids[] = $gid;
         }
-        // OK
-        $eligible_group_ids[] = $gid;
     }
     if (empty($eligible_group_ids)) return [];
     $args = [
@@ -904,6 +925,7 @@ function direktt_cross_sell_setup_profile_tool()
 function direktt_cross_sell_get_all_available_bulk_coupons()
 {
     global $wpdb;
+    $used_table = $wpdb->prefix . 'direktt_cross_sell_used_bulk';
 
     // 1. Get all coupon groups of type bulk
     $bulk_coupon_groups = get_posts([
@@ -942,7 +964,6 @@ function direktt_cross_sell_get_all_available_bulk_coupons()
                 continue;
             }
         }
-
         // 2. For each partner *to which this group is assigned*:
         $partner_ids = $wpdb->get_col($wpdb->prepare(
             "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = 'direktt_cross_sell_coupon_groups' AND meta_value = %d",
@@ -964,72 +985,43 @@ function direktt_cross_sell_get_all_available_bulk_coupons()
 
         foreach ($partner_ids as $partner_id) {
             if (empty($partner_lookup[$partner_id])) continue;
-            $partner_title = $partner_lookup[$partner_id]->post_title;
 
-            // 3. Check for issued row for this partner & coupon group
-            $issued_row = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}direktt_cross_sell_issued
-                 WHERE partner_id = %d AND coupon_group_id = %d
-                   AND direktt_issuer_user_id IS NULL AND direktt_receiver_user_id IS NULL AND coupon_guid IS NULL
-                   AND coupon_valid = 1
-                   AND (coupon_expires IS NULL OR coupon_expires = '0000-00-00 00:00:00' OR coupon_expires >= %s)
-                 LIMIT 1",
-                $partner_id,
+            $latest_used_count = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM $used_table WHERE issued_id = %s AND partner_id = %s ",
                 $group_id,
-                $now
+                $partner_id
             ));
 
-            $is_available = false;
-            $used_count = 0;
-            $issued_id = null;
-            $issued_expires = null;
-
-            if ($issued_row) {
-                // There is a bulk coupon issued row: see if it's still usable (usage check)
-                $issued_id = $issued_row->ID;
-                $issued_expires = $issued_row->coupon_expires;
-                $used_count = (int)$wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(*) FROM {$wpdb->prefix}direktt_cross_sell_used WHERE issued_id = %d",
-                    $issued_id
-                ));
-                // Available if not expired and not used up (or max_usage zero = unlimited)
-                if (
-                    ($max_usage == 0 || $used_count < $max_usage)
-                    && (empty($issued_expires) || $issued_expires === '0000-00-00 00:00:00' || $issued_expires >= $now)
-                ) {
-                    $is_available = true;
-                }
-            } else {
-                // Not yet issued: "available" if group validity is not past
-                $is_available = true;
+            if ($max_usage > 0 && $latest_used_count >= $max_usage) {
+                // Usage limit reached - continue
+                continue;
             }
 
-            if ($is_available) {
-                $results[] = [
-                    'partner_id'         => $partner_id,
-                    'partner_title'      => $partner_title,
-                    'coupon_group_id'    => $group_id,
-                    'coupon_group_title' => $group_title,
-                    'issued_id'          => $issued_id,
-                    'used_count'         => $used_count,
-                    'max_usage'          => $max_usage,
-                    'expires'            => $issued_expires ?: $group_expires,
-                    'is_available'       => true,
-                ];
-            }
+            $partner_title = $partner_lookup[$partner_id]->post_title;
+
+            $results[] = [
+                'partner_id'         => $partner_id,
+                'partner_title'      => $partner_title,
+                'coupon_group_id'    => $group_id,
+                'coupon_group_title' => $group_title,
+                'used_count'         => $latest_used_count,
+                'max_usage'          => $max_usage,
+                'expires'            => $group_expires,
+                'is_available'       => true,
+            ];
         }
     }
 
     return $results;
 }
 
-function direktt_cross_sell_process_use_coupon($coupon)
+function direktt_cross_sell_process_use_coupon_individual($coupon)
 {
 
     $use_coupon_id = intval($coupon->ID);
 
     $wpdb = $GLOBALS['wpdb'];
-    $used_table = $wpdb->prefix . 'direktt_cross_sell_used';
+    $used_table = $wpdb->prefix . 'direktt_cross_sell_used_individual';
 
     // RACE CONDITION SAFE usage check!
     $latest_used_count = (int) $wpdb->get_var($wpdb->prepare(
@@ -1041,7 +1033,7 @@ function direktt_cross_sell_process_use_coupon($coupon)
     if ($latest_max_usage > 0 && $latest_used_count >= $latest_max_usage) {
         // Usage limit reached - set error flag
         $redirect_url = add_query_arg([
-            'action'    => 'use_coupon',
+            'action'    => 'use_coupon_individual',
             'coupon_id' => intval($use_coupon_id),
             'cross_sell_use_flag' => 2, // error: limit exceeded
         ], remove_query_arg('cross_sell_use_flag'));
@@ -1061,7 +1053,7 @@ function direktt_cross_sell_process_use_coupon($coupon)
             ]
         );
         $redirect_url = add_query_arg([
-            'action'    => 'use_coupon',
+            'action'    => 'use_coupon_individual',
             'coupon_id' => intval($use_coupon_id),
             'cross_sell_use_flag' => $inserted ? 1 : 3, // 1=success, 3=insert failed
         ], remove_query_arg('cross_sell_use_flag'));
@@ -1070,11 +1062,67 @@ function direktt_cross_sell_process_use_coupon($coupon)
     }
 }
 
-function direktt_cross_sell_render_use_coupon($use_coupon_id)
+function direktt_cross_sell_process_use_coupon_bulk($use_coupon_id, $use_parner_id)
+{
+
+    $use_coupon_id = intval($use_coupon_id);
+    $use_parner_id = intval($use_parner_id);
+
+    $direktt_receiver_user_id = isset($_GET['subscriptionId']) ? sanitize_text_field($_GET['subscriptionId']) : '';
+    $direktt_validator_user_id = isset($GLOBALS['direktt_user']['direktt_user_id']) ? $GLOBALS['direktt_user']['direktt_user_id'] : '';
+
+    $wpdb = $GLOBALS['wpdb'];
+    $used_table = $wpdb->prefix . 'direktt_cross_sell_used_bulk';
+
+    // RACE CONDITION SAFE usage check!
+    $latest_used_count = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM $used_table WHERE issued_id = %s AND partner_id = %s ",
+        $use_coupon_id,
+        $use_parner_id
+    ));
+    $latest_max_usage = intval(get_post_meta($use_coupon_id, 'direktt_cross_sell_max_usage', true));
+
+    if ($latest_max_usage > 0 && $latest_used_count >= $latest_max_usage) {
+        // Usage limit reached - set error flag
+        $redirect_url = add_query_arg([
+            'action'    => 'use_coupon_bulk',
+            'coupon_id' => $use_coupon_id,
+            'cross_sell_use_flag' => 2, // error: limit exceeded
+        ], remove_query_arg('cross_sell_use_flag'));
+        wp_safe_redirect($redirect_url);
+        exit;
+    } else {
+        // Do insert
+        $inserted = $wpdb->insert(
+            $used_table,
+            [
+                'issued_id' => $use_coupon_id,
+                'direktt_validator_user_id' => $direktt_validator_user_id,
+                'direktt_receiver_user_id' =>  $direktt_receiver_user_id,
+                'partner_id' => $use_parner_id
+            ],
+            [
+                '%d',
+                '%s',
+                '%s',
+                '%d'
+            ]
+        );
+        $redirect_url = add_query_arg([
+            'action'    => 'use_coupon_bulk',
+            'coupon_id' => $use_coupon_id,
+            'cross_sell_use_flag' => $inserted ? 1 : 3, // 1=success, 3=insert failed
+        ], remove_query_arg('cross_sell_use_flag'));
+        wp_safe_redirect($redirect_url);
+        exit;
+    }
+}
+
+function direktt_cross_sell_render_use_coupon_individual($use_coupon_id)
 {
     $wpdb = $GLOBALS['wpdb'];
     $issued_table = $wpdb->prefix . 'direktt_cross_sell_issued';
-    $used_table = $wpdb->prefix . 'direktt_cross_sell_used';
+    $used_table = $wpdb->prefix . 'direktt_cross_sell_used_individual';
 
     $coupon = $wpdb->get_row($wpdb->prepare("SELECT * FROM $issued_table WHERE ID = %d", $use_coupon_id));
 
@@ -1099,8 +1147,8 @@ function direktt_cross_sell_render_use_coupon($use_coupon_id)
         // --- Usage counts ---
 
         $used_count = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $used_table WHERE issued_id = %s",
-            $coupon->ID
+            "SELECT COUNT(*) FROM $used_table WHERE issued_id = %d",
+            intval($coupon->ID)
         ));
 
         $max_usage = intval(get_post_meta($coupon->coupon_group_id, 'direktt_cross_sell_max_usage', true));
@@ -1109,11 +1157,11 @@ function direktt_cross_sell_render_use_coupon($use_coupon_id)
         $status_message = '';
         // --- Use Handler ---
         if (
-            isset($_POST['direktt_cs_use_coupon']) &&
+            isset($_POST['direktt_cs_use_coupon_individual']) &&
             isset($_POST['direktt_cs_use_coupon_nonce']) &&
             wp_verify_nonce($_POST['direktt_cs_use_coupon_nonce'], 'direktt_cs_use_coupon_action')
         ) {
-            direktt_cross_sell_process_use_coupon($coupon);
+            direktt_cross_sell_process_use_coupon_individual($coupon);
         }
 
         // Display appropriate cross_sell_use_flag notice
@@ -1165,7 +1213,7 @@ function direktt_cross_sell_render_use_coupon($use_coupon_id)
     ?>
             <form method="post" action="" onsubmit="return direkttCSConfirmCouponUse('<?php echo esc_js($group_title); ?>');">
                 <input type="hidden" name="direktt_cs_use_coupon_nonce" value="<?php echo esc_attr(wp_create_nonce('direktt_cs_use_coupon_action')); ?>">
-                <input type="submit" name="direktt_cs_use_coupon" class="button button-primary" value="<?php echo esc_attr__('Use Coupon', 'direktt-cross-sell'); ?>">
+                <input type="submit" name="direktt_cs_use_coupon_individual" class="button button-primary" value="<?php echo esc_attr__('Use Coupon', 'direktt-cross-sell'); ?>">
             </form>
             <script>
                 function direkttCSConfirmCouponUse(title) {
@@ -1178,9 +1226,146 @@ function direktt_cross_sell_render_use_coupon($use_coupon_id)
         }
 
         // Back
-        $back_url = remove_query_arg(['action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id']);
+        $back_url = remove_query_arg(['action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag']);
         echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
     }
+}
+
+function direktt_cross_sell_render_use_coupon_bulk($use_coupon_id, $use_partner_id)
+{
+    $wpdb = $GLOBALS['wpdb'];
+    $used_table = $wpdb->prefix . 'direktt_cross_sell_used_bulk';
+
+    $coupon_group_post = get_post(intval($use_coupon_id));
+
+    if (!$coupon_group_post) {
+        echo '<div class="notice notice-error"><p>' . esc_html__('Coupon not found.', 'direktt-cross-sell') . '</p></div>';
+    } else {
+
+        $partner_post = get_post(intval($use_partner_id));
+
+        $partner_name = $partner_post ? esc_html($partner_post->post_title) : esc_html__('Unknown', 'direktt-cross-sell');
+        $group_title = $coupon_group_post ? esc_html($coupon_group_post->post_title) : esc_html__('Unknown', 'direktt-cross-sell');
+        $group_descr = $coupon_group_post ? esc_html($coupon_group_post->post_content) : '';
+        $group_type = get_post_meta($coupon_group_post->ID, 'direktt_cross_sell_group_type', true);
+
+        // Expiry/issuance formatting
+
+        $published_datetime_object = get_post_datetime($coupon_group_post->ID, 'date');
+        $issued_date = $published_datetime_object->format('Y-m-d H:i:s');
+
+        $coupon_expires = null;
+        $group_validity = get_post_meta($coupon_group_post->ID, 'direktt_cross_sell_group_validity', true);
+        if (!empty($group_validity) && intval($group_validity) > 0) {
+            $now = current_time('mysql'); // 'Y-m-d H:i:s'
+            $coupon_expires = date('Y-m-d H:i:s', strtotime($now . ' + ' . intval($group_validity) . ' days'));
+        }
+
+        $expires = (empty($coupon_expires) || $coupon_expires == '0000-00-00 00:00:00')
+            ? esc_html__('No expiry', 'direktt-cross-sell')
+            : esc_html(mysql2date('Y-m-d H:i:s', $coupon_expires));
+
+        // --- Usage counts ---
+
+        $used_count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $used_table WHERE issued_id = %s",
+            $coupon_group_post->ID
+        ));
+
+        $max_usage = intval(get_post_meta($coupon_group_post->ID, 'direktt_cross_sell_max_usage', true));
+
+        // --- Use Handler ---
+        $status_message = '';
+        // --- Use Handler ---
+        if (
+            isset($_POST['direktt_cs_use_coupon_bulk']) &&
+            isset($_POST['direktt_cs_use_coupon_nonce']) &&
+            wp_verify_nonce($_POST['direktt_cs_use_coupon_nonce'], 'direktt_cs_use_coupon_action')
+        ) {
+            direktt_cross_sell_process_use_coupon_bulk($use_coupon_id, $use_partner_id);
+        }
+
+        // Display appropriate cross_sell_use_flag notice
+        if (isset($_GET['cross_sell_use_flag'])) {
+            $flag = intval($_GET['cross_sell_use_flag']);
+            if ($flag === 1) {
+                echo '<div class="notice notice-success"><p>' . esc_html__('Coupon used successfully.', 'direktt-cross-sell') . '</p></div>';
+            } elseif ($flag === 2) {
+                echo '<div class="notice notice-error"><p>' . esc_html__('Coupon usage limit has been reached; cannot use coupon.', 'direktt-cross-sell') . '</p></div>';
+            } elseif ($flag === 3) {
+                echo '<div class="notice notice-error"><p>' . esc_html__('There was an error recording coupon usage. Please try again.', 'direktt-cross-sell') . '</p></div>';
+            }
+        }
+
+        // Coupon info table
+        echo '<h2>' . esc_html__('Use Coupon', 'direktt-cross-sell') . '</h2>';
+        echo '<table class="form-table">';
+        echo '<tr><th>' . esc_html__('Partner Name', 'direktt-cross-sell') . '</th><td>' . $partner_name . '</td></tr>';
+        echo '<tr><th>' . esc_html__('Coupon Title', 'direktt-cross-sell') . '</th><td>' . $group_title . '</td></tr>';
+        echo '<tr><th>' . esc_html__('Description', 'direktt-cross-sell') . '</th><td>' . $group_descr . '</td></tr>';
+        echo '<tr><th>' . esc_html__('Issued At', 'direktt-cross-sell') . '</th><td>' . $issued_date . '</td></tr>';
+        echo '<tr><th>' . esc_html__('Expires', 'direktt-cross-sell') . '</th><td>' . $expires . '</td></tr>';
+
+        if ($group_type == '2') {
+            echo '<tr><th>' . esc_html__('Bulk Coupon Usage', 'direktt-cross-sell') . '</th><td>';
+            printf(
+                esc_html__('%1$s / %2$s', 'direktt-cross-sell'),
+                esc_html($used_count),
+                ($max_usage == 0 ? esc_html__('Unlimited', 'direktt-cross-sell') : esc_html($max_usage))
+            );
+            echo '</td></tr>';
+        } else {
+            echo '<tr><th>' . esc_html__('Usages', 'direktt-cross-sell') . '</th><td>';
+            printf(
+                esc_html__('%1$s / %2$s', 'direktt-cross-sell'),
+                esc_html($used_count),
+                ($max_usage == 0 ? esc_html__('Unlimited', 'direktt-cross-sell') : esc_html($max_usage))
+            );
+            echo '</td></tr>';
+        }
+        echo '</table>';
+
+        // Only show "Use" button if not used up
+        $disable_use = false;
+        if ($max_usage > 0 && $used_count >= $max_usage) {
+            $disable_use = true;
+        }
+        if (!$disable_use && empty($status_message)) {
+        ?>
+            <form method="post" action="" onsubmit="return direkttCSConfirmCouponUse('<?php echo esc_js($group_title); ?>');">
+                <input type="hidden" name="direktt_cs_use_coupon_nonce" value="<?php echo esc_attr(wp_create_nonce('direktt_cs_use_coupon_action')); ?>">
+                <input type="submit" name="direktt_cs_use_coupon_bulk" class="button button-primary" value="<?php echo esc_attr__('Use Coupon', 'direktt-cross-sell'); ?>">
+            </form>
+            <script>
+                function direkttCSConfirmCouponUse(title) {
+                    return window.confirm('<?php echo esc_js(__('Are you sure you want to use this coupon for: ', 'direktt-cross-sell')); ?>' + title + '?');
+                }
+            </script>
+        <?php
+        } elseif ($disable_use) {
+            echo '<p><em>' . esc_html__('This coupon has reached its usage limit.', 'direktt-cross-sell') . '</em></p>';
+        }
+
+        // Back
+        $back_url = remove_query_arg(['action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag']);
+        echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
+    }
+}
+
+function direktt_cross_sell_get_issue_count($coupon_group_id, $partner_id)
+{
+    global $wpdb;
+
+    $table = $wpdb->prefix . 'direktt_cross_sell_issued';
+    $issued_count = (int)$wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COUNT(*) FROM $table WHERE coupon_group_id = %d AND partner_id = %d",
+            intval($coupon_group_id),
+            intval($partner_id)
+        )
+    );
+
+    return intval($issued_count);
 }
 
 function direktt_cross_sell_render_individual_partner($partner_id)
@@ -1201,6 +1386,8 @@ function direktt_cross_sell_render_individual_partner($partner_id)
         $status_message = esc_html__('Coupon issued successfully.', 'direktt-cross-sell');
     } elseif ($status_flag === 2) {
         $status_message = esc_html__('There was an error while issuing the coupon.', 'direktt-cross-sell');
+    } elseif ($status_flag === 3) {
+        $status_message = esc_html__('The issue count has reached its max number. The coupon can not be issued', 'direktt-cross-sell');
     }
 
     if ($status_message) {
@@ -1210,7 +1397,7 @@ function direktt_cross_sell_render_individual_partner($partner_id)
     $partner = get_post($partner_id);
     if (!$partner || $partner->post_type !== 'direkttcspartners') {
         echo '<p>' . esc_html__('Invalid partner selected.', 'direktt-cross-sell') . '</p>';
-        $back_url = remove_query_arg(['action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id']);
+        $back_url = remove_query_arg(['action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag']);
         echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
         return;
     }
@@ -1226,14 +1413,14 @@ function direktt_cross_sell_render_individual_partner($partner_id)
         <ul>
             <?php
             foreach ($groups as $group) {
-                $group_type = get_post_meta($group->ID, 'direktt_cross_sell_group_type', true);
-                $type_label = ($group_type == '2')
-                    ? esc_html__('Bulk', 'direktt-cross-sell')
-                    : esc_html__('Individual', 'direktt-cross-sell');
+                $max_issue = intval(get_post_meta($group->ID, 'direktt_cross_sell_max_issuance', true));
+                $issue_label = ($max_issue == 0)
+                    ? esc_html__('Unlimited', 'direktt-cross-sell')
+                    : $max_issue;
             ?>
                 <li>
                     <?php echo esc_html($group->post_title); ?>
-                    <span>(<?php echo $type_label; ?>)</span>
+                    <span>( Issued: <?php echo direktt_cross_sell_get_issue_count( $group->ID, $partner_id ); ?> / <?php echo $issue_label; ?> )</span>
                     <form method="post" action="" style="display:inline;" class="direktt-cs-issue-form" onsubmit="return direkttCSConfirmIssue('<?php echo esc_js($group->post_title); ?>');">
                         <input type="hidden" name="direktt_coupon_group_id" value="<?php echo esc_attr($group->ID); ?>">
                         <input type="hidden" name="direktt_cs_issue_coupon_nonce" value="<?php echo esc_attr(wp_create_nonce('direktt_cs_issue_coupon_action')); ?>">
@@ -1251,7 +1438,7 @@ function direktt_cross_sell_render_individual_partner($partner_id)
         </script>
     <?php
     }
-    echo '<a href="' . esc_url(remove_query_arg(['direktt_partner_id', 'cross_sell_status_flag'])) . '">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
+    echo '<a href="' . esc_url(remove_query_arg(['action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag'])) . '">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
 }
 
 function direktt_cross_sell_process_coupon_issue($partner_id, $coupon_group_id)
@@ -1268,54 +1455,10 @@ function direktt_cross_sell_process_coupon_issue($partner_id, $coupon_group_id)
     // Get coupon group properties
     $group_type     = get_post_meta($coupon_group_id, 'direktt_cross_sell_group_type', true);       // 1 = individual, 2 = bulk
     $group_validity = get_post_meta($coupon_group_id, 'direktt_cross_sell_group_validity', true);   // days (0 = no expiry)
+
     $table = $wpdb->prefix . 'direktt_cross_sell_issued';
 
-    if ($group_type == '2') { // Bulk coupon logic
-
-        // Check if the "bulk" coupon record exists (partner+group, issuer/receiver/coupon_guid == NULL)
-        $existing_row = $wpdb->get_row(
-            $wpdb->prepare(
-                "SELECT * FROM $table WHERE partner_id = %d AND coupon_group_id = %d AND direktt_issuer_user_id IS NULL AND direktt_receiver_user_id IS NULL AND coupon_guid IS NULL LIMIT 1",
-                $partner_id,
-                $coupon_group_id
-            )
-        );
-
-        if ($existing_row) {
-            // Already exists, nothing to do (optionally show a message)
-            $issued = true;
-        } else {
-            // Validity for bulk coupon: apply to the single bulk entry
-            $coupon_expires = null;
-            if (!empty($group_validity) && intval($group_validity) > 0) {
-                $now = current_time('mysql'); // 'Y-m-d H:i:s'
-                $coupon_expires = date('Y-m-d H:i:s', strtotime($now . ' + ' . intval($group_validity) . ' days'));
-            }
-
-            // Insert bulk "shared" entry (issuer, receiver, guid are NULL)
-            $inserted = $wpdb->insert(
-                $table,
-                [
-                    'partner_id'               => $partner_id,
-                    'coupon_group_id'          => $coupon_group_id,
-                    'direktt_issuer_user_id'   => null,
-                    'direktt_receiver_user_id' => null,
-                    'coupon_expires'           => $coupon_expires,
-                    'coupon_guid'              => null,
-                    // coupon_time: DB default
-                ],
-                [
-                    '%d', // partner_id
-                    '%d', // group_id
-                    'NULL', // issuer
-                    'NULL', // receiver
-                    is_null($coupon_expires) ? 'NULL' : '%s', // expires
-                    'NULL', // guid
-                ]
-            );
-            $issued = (bool) $inserted;
-        }
-    } else if (!empty($direktt_receiver_user_id) && !empty($coupon_group_id) && !empty($partner_id) && !empty($direktt_user['direktt_user_id'])) {
+    if ($group_type == '1' && !empty($direktt_receiver_user_id) && !empty($coupon_group_id) && !empty($partner_id) && !empty($direktt_user['direktt_user_id'])) {
 
         // INDIVIDUAL coupon logic (old code, as before)
         $coupon_expires = null;
@@ -1323,36 +1466,51 @@ function direktt_cross_sell_process_coupon_issue($partner_id, $coupon_group_id)
             $now = current_time('mysql');
             $coupon_expires = date('Y-m-d H:i:s', strtotime($now . ' + ' . intval($group_validity) . ' days'));
         }
-        $coupon_guid = wp_generate_uuid4();
 
-        $inserted = $wpdb->insert(
-            $table,
-            [
-                'partner_id'               => $partner_id,
-                'coupon_group_id'          => $coupon_group_id,
-                'direktt_issuer_user_id'   => $direktt_user['direktt_user_id'],
-                'direktt_receiver_user_id' => $direktt_receiver_user_id,
-                'coupon_expires'           => $coupon_expires,
-                'coupon_guid'              => $coupon_guid,
-                // coupon_time: DB default
-            ],
-            [
-                '%d', // partner_id
-                '%d', // group_id
-                '%s', // issuer
-                '%s', // receiver
-                is_null($coupon_expires) ? 'NULL' : '%s',
-                '%s'  // guid
-            ]
-        );
-        $issued = (bool) $inserted;
+        $max_issuance = get_post_meta(intval($coupon_group_id), 'direktt_cross_sell_max_issuance', true);
+        $max_issuance = (string)$max_issuance === '' ? 0 : intval($max_issuance);
+
+        $table = $wpdb->prefix . 'direktt_cross_sell_issued';
+        $issued_count = direktt_cross_sell_get_issue_count($coupon_group_id, $partner_id);
+
+        if ($max_issuance != 0 && $issued_count >= $max_issuance) {
+            $issued = 3;
+        } else {
+
+            $coupon_guid = wp_generate_uuid4();
+
+            $inserted = $wpdb->insert(
+                $table,
+                [
+                    'partner_id'               => $partner_id,
+                    'coupon_group_id'          => $coupon_group_id,
+                    'direktt_issuer_user_id'   => $direktt_user['direktt_user_id'],
+                    'direktt_receiver_user_id' => $direktt_receiver_user_id,
+                    'coupon_expires'           => $coupon_expires,
+                    'coupon_guid'              => $coupon_guid,
+                    // coupon_time: DB default
+                ],
+                [
+                    '%d', // partner_id
+                    '%d', // group_id
+                    '%s', // issuer
+                    '%s', // receiver
+                    is_null($coupon_expires) ? 'NULL' : '%s',
+                    '%s'  // guid
+                ]
+            );
+            if ((bool) $inserted) {
+                $issued = 1;
+                //TODO Send Issuance messages
+            } else {
+                $issued = 2;
+            }
+        }
     }
-
-    //TODO Send Issuance messages
 
     $redirect_url = add_query_arg([
         'direktt_partner_id' => intval($partner_id),
-        'cross_sell_status_flag' => $issued ? 1 : 2
+        'cross_sell_status_flag' => $issued
     ], remove_query_arg('cross_sell_status_flag'));
     wp_safe_redirect($redirect_url);
     exit;
@@ -1406,9 +1564,10 @@ function direktt_cross_sell_render_available_bulk()
             echo '<td>' . $expiry_display . '</td>';
             echo '<td>';
             $use_url = add_query_arg([
-                'action' => 'use_coupon',
-                'coupon_id' => intval($coupon['issued_id']),
-            ], remove_query_arg(['action', 'coupon_id']));
+                'action' => 'use_coupon_bulk',
+                'coupon_id' => intval($coupon['coupon_group_id']),
+                'partner_id' => intval($coupon['partner_id']),
+            ], remove_query_arg(['action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag']));
             echo '<a class="button button-primary" href="' . esc_url($use_url) . '">' . esc_html__('Use', 'direktt-cross-sell') . '</a>';
             echo '</td>';
             echo '</tr>';
@@ -1417,7 +1576,7 @@ function direktt_cross_sell_render_available_bulk()
     }
 }
 
-function direktt_cross_sell_render_issued_individual( $subscription_id)
+function direktt_cross_sell_render_issued_individual($subscription_id)
 {
     global $wpdb;
     $table = $wpdb->prefix . 'direktt_cross_sell_issued';
@@ -1456,7 +1615,7 @@ function direktt_cross_sell_render_issued_individual( $subscription_id)
         // Usage filtering for Individual Coupons
         $max_usage = intval(get_post_meta($row->coupon_group_id, 'direktt_cross_sell_max_usage', true));
         if (!$max_usage) $max_usage = 0;
-        $used_table = $wpdb->prefix . 'direktt_cross_sell_used';
+        $used_table = $wpdb->prefix . 'direktt_cross_sell_used_individual';
         $used_count = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM $used_table WHERE issued_id = %s",
             $row->ID
@@ -1492,9 +1651,9 @@ function direktt_cross_sell_render_issued_individual( $subscription_id)
             echo '<td>' . $expires . '</td>';
             echo '<td>';
             $use_url = add_query_arg([
-                'action' => 'use_coupon',
+                'action' => 'use_coupon_individual',
                 'coupon_id' => intval($row->ID),
-            ], remove_query_arg(['action', 'coupon_id']));
+            ], remove_query_arg(['action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag']));
             echo '<a class="button button-primary" href="' . esc_url($use_url) . '">' . esc_html__('Use', 'direktt-cross-sell') . '</a>';
             // Only show Invalidate for Individual
             echo '<form method="post" action="" style="display:inline;" class="direktt-cs-invalidate-form" onsubmit="return direkttCSConfirmInvalidate(\'' . esc_js($group_title) . '\', \'' . esc_js($issued) . '\');">';
@@ -1516,29 +1675,38 @@ function direktt_cross_sell_render_issued_individual( $subscription_id)
 <?php
 }
 
-function direktt_cross_sell_process_coupon_invalidate( $invalid_id ){
+function direktt_cross_sell_process_coupon_invalidate($invalid_id)
+{
     global $wpdb;
-        $table = $wpdb->prefix . 'direktt_cross_sell_issued';
-        $updated = $wpdb->update(
-            $table,
-            ['coupon_valid' => 0],
-            ['ID' => $invalid_id],
-            ['%d'],
-            ['%d']
-        );
+    $table = $wpdb->prefix . 'direktt_cross_sell_issued';
+    $updated = $wpdb->update(
+        $table,
+        ['coupon_valid' => 0],
+        ['ID' => $invalid_id],
+        ['%d'],
+        ['%d']
+    );
 
-        $redirect_url = remove_query_arg('cross_sell_invalidate_flag');
-        wp_safe_redirect($redirect_url);
-        exit;
-
+    $redirect_url = remove_query_arg('cross_sell_invalidate_flag');
+    wp_safe_redirect($redirect_url);
+    exit;
 }
 
 function direktt_cross_sell_render_profile_tool()
 {
-    // --- Show Use Coupon Screen ---
-    if (isset($_GET['action']) && $_GET['action'] === 'use_coupon' && isset($_GET['coupon_id'])) {
+    // --- Show Use Individual Coupon Screen ---
+    if (isset($_GET['action']) && $_GET['action'] === 'use_coupon_individual' && isset($_GET['coupon_id'])) {
 
-        direktt_cross_sell_render_use_coupon(intval($_GET['coupon_id']));
+        direktt_cross_sell_render_use_coupon_individual(intval($_GET['coupon_id']));
+        return;
+    }
+
+    // --- Show Use Individual Coupon Screen ---
+    if (isset($_GET['action']) && $_GET['action'] === 'use_coupon_bulk' && isset($_GET['coupon_id']) && isset($_GET['partner_id'])) {
+
+
+
+        direktt_cross_sell_render_use_coupon_bulk(intval($_GET['coupon_id']), intval($_GET['partner_id']));
         return;
     }
 
@@ -1556,7 +1724,7 @@ function direktt_cross_sell_render_profile_tool()
         isset($_POST['direktt_cs_invalidate_coupon_nonce']) &&
         wp_verify_nonce($_POST['direktt_cs_invalidate_coupon_nonce'], 'direktt_cs_invalidate_coupon_action')
     ) {
-        direktt_cross_sell_process_coupon_invalidate( intval($_POST['invalid_coupon_id']) );
+        direktt_cross_sell_process_coupon_invalidate(intval($_POST['invalid_coupon_id']));
     }
 
     // Partners with Individual Coupon offering
@@ -1566,7 +1734,7 @@ function direktt_cross_sell_render_profile_tool()
     $subscription_id = isset($_GET['subscriptionId']) ? sanitize_text_field($_GET['subscriptionId']) : '';
     if (direktt_cross_sell_user_can_review() && !empty($subscription_id)) {
 
-        direktt_cross_sell_render_issued_individual( $subscription_id );
+        direktt_cross_sell_render_issued_individual($subscription_id);
         direktt_cross_sell_render_available_bulk();
     }
 }
