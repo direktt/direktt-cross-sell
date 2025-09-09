@@ -39,8 +39,14 @@ add_action('save_post', 'save_direktt_cross_sell_coupon_groups_meta');
 add_action('direktt_setup_profile_tools', 'direktt_cross_sell_setup_profile_tool');
 
 //Reports ajax handlers
-add_action( 'wp_ajax_direktt_cross_sell_get_issued_report', 'handle_direktt_cross_sell_get_issued_report' );
-add_action( 'wp_ajax_direktt_cross_sell_get_used_report', 'handle_direktt_cross_sell_get_used_report' );
+add_action('wp_ajax_direktt_cross_sell_get_issued_report', 'handle_direktt_cross_sell_get_issued_report');
+add_action('wp_ajax_direktt_cross_sell_get_used_report', 'handle_direktt_cross_sell_get_used_report');
+
+// [direktt_cross_sell_my_coupons] shortcode implementation
+add_shortcode('direktt_cross_sell_my_coupons', 'direktt_cross_sell_my_coupons');
+
+// [direktt_cross_sell_coupon_validation] shortcode implementation
+add_shortcode('direktt_cross_sell_coupon_validation', 'direktt_cross_sell_coupon_validation');
 
 function direktt_cross_sell_activation_check()
 {
@@ -475,61 +481,62 @@ function direktt_cross_sell_partners_render_custom_box($post)
 <?php
 }
 
-function direktt_cross_sell_partners_render_reports_meta_box($post) {
+function direktt_cross_sell_partners_render_reports_meta_box($post)
+{
     // Security nonce
-    wp_nonce_field( 'direktt_reports_meta_box', 'direktt_reports_meta_box_nonce' );
+    wp_nonce_field('direktt_reports_meta_box', 'direktt_reports_meta_box_nonce');
 
     // Use esc to be safe
-    $post_id = intval( $post->ID );
-    ?>
+    $post_id = intval($post->ID);
+?>
     <div class="direktt-reports-meta-box">
         <p>
-            <label for="direktt-report-range"><strong><?php echo esc_html__( 'Range', 'direktt-cross-sell' ); ?></strong></label>
+            <label for="direktt-report-range"><strong><?php echo esc_html__('Range', 'direktt-cross-sell'); ?></strong></label>
             <select id="direktt-report-range" name="direktt_report_range">
-                <option value="7"><?php echo esc_html__( 'Last 7 days', 'direktt-cross-sell' ); ?></option>
-                <option value="30"><?php echo esc_html__( 'Last 30 days', 'direktt-cross-sell' ); ?></option>
-                <option value="90"><?php echo esc_html__( 'Last 90 days', 'direktt-cross-sell' ); ?></option>
-                <option value="custom"><?php echo esc_html__( 'Custom date range', 'direktt-cross-sell' ); ?></option>
+                <option value="7"><?php echo esc_html__('Last 7 days', 'direktt-cross-sell'); ?></option>
+                <option value="30"><?php echo esc_html__('Last 30 days', 'direktt-cross-sell'); ?></option>
+                <option value="90"><?php echo esc_html__('Last 90 days', 'direktt-cross-sell'); ?></option>
+                <option value="custom"><?php echo esc_html__('Custom date range', 'direktt-cross-sell'); ?></option>
             </select>
         </p>
 
         <div id="direktt-custom-dates" style="display: none; margin-top: 8px;">
             <p>
-                <label for="direktt-date-from"><?php echo esc_html__( 'From', 'direktt-cross-sell' ); ?></label>
+                <label for="direktt-date-from"><?php echo esc_html__('From', 'direktt-cross-sell'); ?></label>
                 <input type="date" id="direktt-date-from" name="direktt_date_from" />
             </p>
             <p>
-                <label for="direktt-date-to"><?php echo esc_html__( 'To', 'direktt-cross-sell' ); ?></label>
+                <label for="direktt-date-to"><?php echo esc_html__('To', 'direktt-cross-sell'); ?></label>
                 <input type="date" id="direktt-date-to" name="direktt_date_to" />
             </p>
         </div>
 
         <p style="margin-top:12px;">
-            <button type="button" class="button" id="direktt-generate-issued"><?php echo esc_html__( 'Generate Issued Report', 'direktt-cross-sell' ); ?></button>
-            <button type="button" class="button" id="direktt-generate-used"><?php echo esc_html__( 'Generate Used Report', 'direktt-cross-sell' ); ?></button>
+            <button type="button" class="button" id="direktt-generate-issued"><?php echo esc_html__('Generate Issued Report', 'direktt-cross-sell'); ?></button>
+            <button type="button" class="button" id="direktt-generate-used"><?php echo esc_html__('Generate Used Report', 'direktt-cross-sell'); ?></button>
         </p>
 
         <!-- Hidden field for post_id so JS can read it -->
-        <input type="hidden" id="direktt-post-id" value="<?php echo esc_attr( $post_id ); ?>" />
+        <input type="hidden" id="direktt-post-id" value="<?php echo esc_attr($post_id); ?>" />
     </div>
     <script>
-        jQuery( document ).ready( function( $ ) {
+        jQuery(document).ready(function($) {
             // toggle custom date inputs
-            $( '#direktt-report-range' ).on( 'change', function() {
-                if ( $( this ).val() === 'custom' ) {
-                    $( '#direktt-custom-dates' ).slideDown();
+            $('#direktt-report-range').on('change', function() {
+                if ($(this).val() === 'custom') {
+                    $('#direktt-custom-dates').slideDown();
                 } else {
-                    $( '#direktt-custom-dates' ).slideUp();
+                    $('#direktt-custom-dates').slideUp();
                 }
             });
 
             // helper to collect data
-            function collectReportData( type ) {
-                var post_id = $( '#direktt-post-id' ).val();
-                var nonce   = $( 'input[name="direktt_reports_meta_box_nonce"]' ).val();
-                var range   = $( '#direktt-report-range' ).val();
-                var from    = $( '#direktt-date-from' ).val();
-                var to      = $( '#direktt-date-to' ).val();
+            function collectReportData(type) {
+                var post_id = $('#direktt-post-id').val();
+                var nonce = $('input[name="direktt_reports_meta_box_nonce"]').val();
+                var range = $('#direktt-report-range').val();
+                var from = $('#direktt-date-from').val();
+                var to = $('#direktt-date-to').val();
 
                 var ajaxData = {
                     action: type === 'issued' ? 'direktt_cross_sell_get_issued_report' : 'direktt_cross_sell_get_used_report',
@@ -538,34 +545,34 @@ function direktt_cross_sell_partners_render_reports_meta_box($post) {
                     nonce: nonce
                 };
 
-                if ( range === 'custom' ) {
+                if (range === 'custom') {
                     ajaxData.from = from;
-                    ajaxData.to   = to;
+                    ajaxData.to = to;
                 }
 
                 return ajaxData;
             }
 
             // Bind buttons
-            $( '#direktt-generate-issued' ).on( 'click', function() {
+            $('#direktt-generate-issued').on('click', function() {
                 event.preventDefault();
-                var $btn = $( this );
-                var data = collectReportData( 'issued' );
+                var $btn = $(this);
+                var data = collectReportData('issued');
                 // Basic client-side validation for custom range
-                if ( data.range === 'custom' && ( ! data.from || ! data.to ) ) {
-                    alert( 'Please select both From and To dates for a custom range.' );
+                if (data.range === 'custom' && (!data.from || !data.to)) {
+                    alert('Please select both From and To dates for a custom range.');
                     return;
                 }
 
                 $.ajax({
-                    url: '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>',
+                    url: '<?php echo esc_js(admin_url('admin-ajax.php')); ?>',
                     method: 'POST',
                     data: data,
-                    success: function( response ) {
-                        if ( response.success ) {
+                    success: function(response) {
+                        if (response.success) {
                             window.location.href = response.data.url;
                         } else {
-                            alert( response.data );
+                            alert(response.data);
                         }
                     },
                     error: function() {
@@ -574,77 +581,78 @@ function direktt_cross_sell_partners_render_reports_meta_box($post) {
                 });
             });
 
-            $( '#direktt-generate-used' ).on( 'click', function() {
+            $('#direktt-generate-used').on('click', function() {
                 event.preventDefault();
-                var $btn = $( this );
-                var data = collectReportData( 'used' );
-                if ( data.range === 'custom' && ( ! data.from || ! data.to ) ) {
-                    alert( 'Please select both From and To dates for a custom range.' );
+                var $btn = $(this);
+                var data = collectReportData('used');
+                if (data.range === 'custom' && (!data.from || !data.to)) {
+                    alert('Please select both From and To dates for a custom range.');
                     return;
                 }
 
                 $.ajax({
-                    url: '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>',
+                    url: '<?php echo esc_js(admin_url('admin-ajax.php')); ?>',
                     method: 'POST',
                     data: data,
-                    success: function( response ) {
-                        if ( response.success ) {
+                    success: function(response) {
+                        if (response.success) {
                             window.location.href = response.data.url;
                         } else {
-                            alert( response.data );
+                            alert(response.data);
                         }
                     }
                 });
             });
         });
     </script>
-    <?php
+<?php
 }
 
-function handle_direktt_cross_sell_get_issued_report() {
-    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'direktt_reports_meta_box' ) ) {
-        wp_send_json_error( esc_html__( 'Invalid nonce.', 'direktt-cross-sell' ) );
+function handle_direktt_cross_sell_get_issued_report()
+{
+    if (! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'direktt_reports_meta_box')) {
+        wp_send_json_error(esc_html__('Invalid nonce.', 'direktt-cross-sell'));
         wp_die();
     }
 
-    if ( ! isset( $_POST['post_id'], $_POST['range'] ) ) {
-        wp_send_json_error( esc_html__( 'Data error.', 'direktt-cross-sell' ) );
+    if (! isset($_POST['post_id'], $_POST['range'])) {
+        wp_send_json_error(esc_html__('Data error.', 'direktt-cross-sell'));
         wp_die();
     }
 
     global $wpdb;
 
-    $post_id      = intval( $_POST['post_id'] ); // used as partner_id
-    $range        = sanitize_text_field( $_POST['range'] );
+    $post_id      = intval($_POST['post_id']); // used as partner_id
+    $range        = sanitize_text_field($_POST['range']);
     $issued_table = $wpdb->prefix . 'direktt_cross_sell_issued';
 
     // Build WHERE
-    $where = $wpdb->prepare( "partner_id = %d", $post_id );
+    $where = $wpdb->prepare("partner_id = %d", $post_id);
 
-    if ( in_array( $range, ['7','30','90'], true ) ) {
-        $days  = intval( $range );
-        $where .= $wpdb->prepare( " AND coupon_time >= DATE_SUB(NOW(), INTERVAL %d DAY)", $days );
-    } elseif ( $range === 'custom' ) {
-        if ( ! isset( $_POST['from'], $_POST['to'] ) ) {
-            wp_send_json_error( esc_html__( 'Data error.', 'direktt-cross-sell' ) );
+    if (in_array($range, ['7', '30', '90'], true)) {
+        $days  = intval($range);
+        $where .= $wpdb->prepare(" AND coupon_time >= DATE_SUB(NOW(), INTERVAL %d DAY)", $days);
+    } elseif ($range === 'custom') {
+        if (! isset($_POST['from'], $_POST['to'])) {
+            wp_send_json_error(esc_html__('Data error.', 'direktt-cross-sell'));
             wp_die();
         }
-        $from = sanitize_text_field( $_POST['from'] ); // format: Y-m-d or Y-m-d H:i:s
-        $to   = sanitize_text_field( $_POST['to'] );
-        $where .= $wpdb->prepare( " AND coupon_time BETWEEN %s AND %s", $from, $to );
+        $from = sanitize_text_field($_POST['from']); // format: Y-m-d or Y-m-d H:i:s
+        $to   = sanitize_text_field($_POST['to']);
+        $where .= $wpdb->prepare(" AND coupon_time BETWEEN %s AND %s", $from, $to);
     }
 
     // Get issued coupons
     $query   = "SELECT * FROM {$issued_table} WHERE {$where}";
-    $results = $wpdb->get_results( $query );
+    $results = $wpdb->get_results($query);
 
-    if ( empty( $results ) ) {
-        wp_send_json_error( esc_html__( 'No data found.', 'direktt-cross-sell' ) );
+    if (empty($results)) {
+        wp_send_json_error(esc_html__('No data found.', 'direktt-cross-sell'));
         wp_die();
     }
 
     // Build CSV with custom columns
-    $csv = fopen( 'php://temp', 'r+' );
+    $csv = fopen('php://temp', 'r+');
 
     // Headers
     $headers = [
@@ -656,11 +664,11 @@ function handle_direktt_cross_sell_get_issued_report() {
         'Time of Expiring',
         'Coupon Valid'
     ];
-    fputcsv( $csv, $headers );
+    fputcsv($csv, $headers);
 
-    foreach ( $results as $row ) {
-        $partner_name = get_the_title( $row->partner_id );
-        $voucher_group_name = get_the_title( $row->coupon_group_id );
+    foreach ($results as $row) {
+        $partner_name = get_the_title($row->partner_id);
+        $voucher_group_name = get_the_title($row->coupon_group_id);
 
         $line = [
             $row->ID,
@@ -671,12 +679,12 @@ function handle_direktt_cross_sell_get_issued_report() {
             $row->coupon_expires,
             $row->coupon_valid == 1 ? 'true' : 'false'
         ];
-        fputcsv( $csv, $line );
+        fputcsv($csv, $line);
     }
 
-    rewind( $csv );
-    $csv_content = stream_get_contents( $csv );
-    fclose( $csv );
+    rewind($csv);
+    $csv_content = stream_get_contents($csv);
+    fclose($csv);
 
     // Save to uploads
     $upload_dir = wp_upload_dir();
@@ -684,27 +692,28 @@ function handle_direktt_cross_sell_get_issued_report() {
     $filepath   = $upload_dir['path'] . '/' . $filename;
     $fileurl    = $upload_dir['url'] . '/' . $filename;
 
-    file_put_contents( $filepath, $csv_content );
+    file_put_contents($filepath, $csv_content);
 
-    wp_send_json_success( [ 'url' => $fileurl ] );
+    wp_send_json_success(['url' => $fileurl]);
     wp_die();
 }
 
-function handle_direktt_cross_sell_get_used_report() {
-    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'direktt_reports_meta_box' ) ) {
-        wp_send_json_error( esc_html__( 'Invalid nonce.', 'direktt-cross-sell' ) );
+function handle_direktt_cross_sell_get_used_report()
+{
+    if (! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'direktt_reports_meta_box')) {
+        wp_send_json_error(esc_html__('Invalid nonce.', 'direktt-cross-sell'));
         wp_die();
     }
 
-    if ( ! isset( $_POST['post_id'], $_POST['range'] ) ) {
-        wp_send_json_error( esc_html__( 'Data error.', 'direktt-cross-sell' ) );
+    if (! isset($_POST['post_id'], $_POST['range'])) {
+        wp_send_json_error(esc_html__('Data error.', 'direktt-cross-sell'));
         wp_die();
     }
 
     global $wpdb;
 
-    $post_id = intval( $_POST['post_id'] );
-    $range   = sanitize_text_field( $_POST['range'] );
+    $post_id = intval($_POST['post_id']);
+    $range   = sanitize_text_field($_POST['range']);
 
     $issued_table    = $wpdb->prefix . 'direktt_cross_sell_issued';
     $used_ind_table  = $wpdb->prefix . 'direktt_cross_sell_used_individual';
@@ -712,17 +721,17 @@ function handle_direktt_cross_sell_get_used_report() {
 
     // --- Range filter (applies to coupon_used_time / bulk used_time) ---
     $date_condition = '';
-    if ( in_array( $range, ['7','30','90'], true ) ) {
-        $days = intval( $range );
-        $date_condition = $wpdb->prepare( "AND u.coupon_used_time >= DATE_SUB(NOW(), INTERVAL %d DAY)", $days );
-    } elseif ( $range === 'custom' ) {
-        if ( ! isset( $_POST['from'], $_POST['to'] ) ) {
-            wp_send_json_error( esc_html__( 'Data error.', 'direktt-cross-sell' ) );
+    if (in_array($range, ['7', '30', '90'], true)) {
+        $days = intval($range);
+        $date_condition = $wpdb->prepare("AND u.coupon_used_time >= DATE_SUB(NOW(), INTERVAL %d DAY)", $days);
+    } elseif ($range === 'custom') {
+        if (! isset($_POST['from'], $_POST['to'])) {
+            wp_send_json_error(esc_html__('Data error.', 'direktt-cross-sell'));
             wp_die();
         }
-        $from = sanitize_text_field( $_POST['from'] );
-        $to   = sanitize_text_field( $_POST['to'] );
-        $date_condition = $wpdb->prepare( "AND u.coupon_used_time BETWEEN %s AND %s", $from, $to );
+        $from = sanitize_text_field($_POST['from']);
+        $to   = sanitize_text_field($_POST['to']);
+        $date_condition = $wpdb->prepare("AND u.coupon_used_time BETWEEN %s AND %s", $from, $to);
     }
 
     // --- Individual used ---
@@ -737,15 +746,15 @@ function handle_direktt_cross_sell_get_used_report() {
         INNER JOIN {$issued_table} i ON u.issued_id = i.ID
         WHERE i.partner_id = %d {$date_condition}
     ";
-    $results_individual = $wpdb->get_results( $wpdb->prepare( $query_individual, $post_id ) );
+    $results_individual = $wpdb->get_results($wpdb->prepare($query_individual, $post_id));
 
     // --- Bulk used ---
     $date_condition_bulk = '';
-    if ( in_array( $range, ['7','30','90'], true ) ) {
-        $days = intval( $range );
-        $date_condition_bulk = $wpdb->prepare( "AND coupon_used_time >= DATE_SUB(NOW(), INTERVAL %d DAY)", $days );
-    } elseif ( $range === 'custom' ) {
-        $date_condition_bulk = $wpdb->prepare( "AND coupon_used_time BETWEEN %s AND %s", $from, $to );
+    if (in_array($range, ['7', '30', '90'], true)) {
+        $days = intval($range);
+        $date_condition_bulk = $wpdb->prepare("AND coupon_used_time >= DATE_SUB(NOW(), INTERVAL %d DAY)", $days);
+    } elseif ($range === 'custom') {
+        $date_condition_bulk = $wpdb->prepare("AND coupon_used_time BETWEEN %s AND %s", $from, $to);
     }
 
     $query_bulk = "
@@ -757,15 +766,15 @@ function handle_direktt_cross_sell_get_used_report() {
         FROM {$used_bulk_table}
         WHERE partner_id = %d {$date_condition_bulk}
     ";
-    $results_bulk = $wpdb->get_results( $wpdb->prepare( $query_bulk, $post_id ) );
+    $results_bulk = $wpdb->get_results($wpdb->prepare($query_bulk, $post_id));
 
-    if ( empty( $results_individual ) && empty( $results_bulk ) ) {
-        wp_send_json_error( esc_html__( 'No data found.', 'direktt-cross-sell' ) );
+    if (empty($results_individual) && empty($results_bulk)) {
+        wp_send_json_error(esc_html__('No data found.', 'direktt-cross-sell'));
         wp_die();
     }
 
     // --- CSV ---
-    $csv = fopen( 'php://temp', 'r+' );
+    $csv = fopen('php://temp', 'r+');
 
     $headers = [
         'Partner Name',
@@ -775,13 +784,13 @@ function handle_direktt_cross_sell_get_used_report() {
         'Validator Display Name',
         'Validation Time',
     ];
-    fputcsv( $csv, $headers );
+    fputcsv($csv, $headers);
 
     // Add individual results
-    foreach ( $results_individual as $row ) {
-        $partner_name       = get_the_title( $row->partner_id );
-        $voucher_group_name = get_the_title( $row->coupon_group_id );
-        $profile_user       = Direktt_User::get_user_by_subscription_id( $row->direktt_validator_user_id );
+    foreach ($results_individual as $row) {
+        $partner_name       = get_the_title($row->partner_id);
+        $voucher_group_name = get_the_title($row->coupon_group_id);
+        $profile_user       = Direktt_User::get_user_by_subscription_id($row->direktt_validator_user_id);
         $validator_name     = $profile_user['direktt_display_name'];
 
         $line = [
@@ -792,14 +801,14 @@ function handle_direktt_cross_sell_get_used_report() {
             $validator_name,
             $row->coupon_used_time,
         ];
-        fputcsv( $csv, $line );
+        fputcsv($csv, $line);
     }
 
     // Add bulk results
-    foreach ( $results_bulk as $row ) {
-        $partner_name       = get_the_title( $row->partner_id );
-        $voucher_group_name = get_the_title( $row->issued_id );
-        $profile_user       = Direktt_User::get_user_by_subscription_id( $row->direktt_validator_user_id );
+    foreach ($results_bulk as $row) {
+        $partner_name       = get_the_title($row->partner_id);
+        $voucher_group_name = get_the_title($row->issued_id);
+        $profile_user       = Direktt_User::get_user_by_subscription_id($row->direktt_validator_user_id);
         $validator_name     = $profile_user['direktt_display_name'];
 
         $line = [
@@ -810,12 +819,12 @@ function handle_direktt_cross_sell_get_used_report() {
             $validator_name,
             $row->coupon_used_time,
         ];
-        fputcsv( $csv, $line );
+        fputcsv($csv, $line);
     }
 
-    rewind( $csv );
-    $csv_content = stream_get_contents( $csv );
-    fclose( $csv );
+    rewind($csv);
+    $csv_content = stream_get_contents($csv);
+    fclose($csv);
 
     // Save to uploads
     $upload_dir = wp_upload_dir();
@@ -823,9 +832,9 @@ function handle_direktt_cross_sell_get_used_report() {
     $filepath   = $upload_dir['path'] . '/' . $filename;
     $fileurl    = $upload_dir['url'] . '/' . $filename;
 
-    file_put_contents( $filepath, $csv_content );
+    file_put_contents($filepath, $csv_content);
 
-    wp_send_json_success( [ 'url' => $fileurl ] );
+    wp_send_json_success(['url' => $fileurl]);
     wp_die();
 }
 
@@ -1977,7 +1986,6 @@ function direktt_cross_sell_render_issued_individual($subscription_id)
         $partner_name = $partner_post ? esc_html($partner_post->post_title) : esc_html__('Unknown', 'direktt-cross-sell');
         $coupon_group_post = get_post($row->coupon_group_id);
         $group_title = $coupon_group_post ? esc_html($coupon_group_post->post_title) : esc_html__('Unknown', 'direktt-cross-sell');
-        $type_label = esc_html__('Individual', 'direktt-cross-sell');
         $issued = esc_html(mysql2date('Y-m-d H:i:s', $row->coupon_time));
         $expires = (empty($row->coupon_expires) || $row->coupon_expires == '0000-00-00 00:00:00')
             ? esc_html__('No expiry', 'direktt-cross-sell')
@@ -2001,7 +2009,6 @@ function direktt_cross_sell_render_issued_individual($subscription_id)
         echo '<table class="widefat" style="margin-top:16px;"><thead><tr>';
         echo '<th>' . esc_html__('Partner Name', 'direktt-cross-sell') . '</th>';
         echo '<th>' . esc_html__('Coupon Group', 'direktt-cross-sell') . '</th>';
-        echo '<th>' . esc_html__('Type', 'direktt-cross-sell') . '</th>';
         echo '<th>' . esc_html__('Issued at', 'direktt-cross-sell') . '</th>';
         echo '<th>' . esc_html__('Expires', 'direktt-cross-sell') . '</th>';
         echo '<th>' . esc_html__('Actions', 'direktt-cross-sell') . '</th>';
@@ -2010,11 +2017,19 @@ function direktt_cross_sell_render_issued_individual($subscription_id)
         foreach ($filtered_individual_results as $row) {
             // Group type check (individual only)
 
+            $partner_post = get_post($row->partner_id);
+            $partner_name = $partner_post ? esc_html($partner_post->post_title) : esc_html__('Unknown', 'direktt-cross-sell');
+            $coupon_group_post = get_post($row->coupon_group_id);
+            $group_title = $coupon_group_post ? esc_html($coupon_group_post->post_title) : esc_html__('Unknown', 'direktt-cross-sell');
+            $issued = esc_html(mysql2date('Y-m-d H:i:s', $row->coupon_time));
+            $expires = (empty($row->coupon_expires) || $row->coupon_expires == '0000-00-00 00:00:00')
+                ? esc_html__('No expiry', 'direktt-cross-sell')
+                : esc_html(mysql2date('Y-m-d H:i:s', $row->coupon_expires));
+            $used_count = direktt_cross_sell_get_used_individual_count(intval($row->ID));
 
             echo '<tr>';
             echo '<td>' . $partner_name . '</td>';
             echo '<td>' . $group_title . '</td>';
-            echo '<td>' . $type_label . '</td>';
             echo '<td>' . $issued . '</td>';
             echo '<td>' . $expires . '</td>';
             echo '<td>';
@@ -2043,7 +2058,190 @@ function direktt_cross_sell_render_issued_individual($subscription_id)
             return window.confirm('<?php echo esc_js(__('Are you sure you want to invalidate this coupon for: ', 'direktt-cross-sell')); ?>' + title + ' (Issued: ' + issued + ')?');
         }
     </script>
+    <?php
+}
+
+function direktt_cross_sell_my_coupons()
+{
+
+    global $direktt_user;
+    global $wpdb;
+
+    $subscription_id = $direktt_user['direktt_user_id'];
+
+    $table = $wpdb->prefix . 'direktt_cross_sell_issued';
+    $now = current_time('mysql');
+
+    // --- Show Use Individual Coupon Screen ---
+    if (isset($_GET['direktt_action']) && $_GET['direktt_action'] === 'view_coupon' && isset($_GET['coupon_id'])) {
+
+        $coupons = $wpdb->get_results($wpdb->prepare("
+        SELECT * FROM $table
+        WHERE ID = %d
+    ", intval($_GET['coupon_id'])));
+
+        $coupon = $coupons[0];
+
+        ob_start();
+
+        $back_url = remove_query_arg(['direktt_action', 'coupon_id']);
+        echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back to My Coupons', 'direktt-cross-sell') . '</a>';
+
+        $check_url = get_option('direktt_cross_sell_check_url');
+        $validation_url = site_url($check_url, 'https');
+
+        $actionObject = json_encode(
+            array(
+                "action" => array(
+                    "type" => "link",
+                    "params" => array(
+                        "url" => $validation_url,
+                        "target" => "app"
+                    ),
+                    "retVars" => array(
+                        "coupon_code" => $coupon->coupon_guid
+                    )
+                )
+            )
+        );
+
+    ?>
+
+        <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+        <div id="canvas"></div>
+        <script type="text/javascript">
+            const qrCode = new QRCodeStyling({
+                width: 350,
+                height: 350,
+                type: "svg",
+                data: '<?php echo $actionObject ?>',
+                image: "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg",
+                dotsOptions: {
+                    color: "#4267b2",
+                    type: "rounded"
+                },
+                backgroundOptions: {
+                    color: "#e9ebee",
+                },
+                imageOptions: {
+                    crossOrigin: "anonymous",
+                    margin: 20
+                }
+            });
+
+            qrCode.append(document.getElementById("canvas"));
+            /* qrCode.download({
+                name: "qr",
+                extension: "svg"
+            });*/
+        </script>
+
 <?php
+  
+        return ob_get_clean();
+    }
+
+    ob_start();
+
+    $individual_results = [];
+    if (!empty($subscription_id)) {
+        $individual_results = $wpdb->get_results($wpdb->prepare("
+        SELECT * FROM $table
+        WHERE direktt_receiver_user_id = %s
+          AND (coupon_expires IS NULL OR coupon_expires = '0000-00-00 00:00:00' OR coupon_expires >= %s)
+          AND coupon_valid = 1
+        ORDER BY coupon_time DESC
+    ", $subscription_id, $now));
+    }
+
+    // 3. Output Individual Coupons
+    echo '<h2>' . esc_html__('Issued Individual Coupons', 'direktt-cross-sell') . '</h2>';
+
+    $filtered_individual_results = [];
+
+    foreach ($individual_results as $row) {
+        $group_type_val = get_post_meta($row->coupon_group_id, 'direktt_cross_sell_group_type', true);
+        if ($group_type_val != '1') continue;
+
+        $partner_post = get_post($row->partner_id);
+        $partner_name = $partner_post ? esc_html($partner_post->post_title) : esc_html__('Unknown', 'direktt-cross-sell');
+        $coupon_group_post = get_post($row->coupon_group_id);
+        $group_title = $coupon_group_post ? esc_html($coupon_group_post->post_title) : esc_html__('Unknown', 'direktt-cross-sell');
+        $type_label = esc_html__('Individual', 'direktt-cross-sell');
+        $issued = esc_html(mysql2date('Y-m-d H:i:s', $row->coupon_time));
+        $expires = (empty($row->coupon_expires) || $row->coupon_expires == '0000-00-00 00:00:00')
+            ? esc_html__('No expiry', 'direktt-cross-sell')
+            : esc_html(mysql2date('Y-m-d H:i:s', $row->coupon_expires));
+
+        // Usage filtering for Individual Coupons
+        $max_usage = intval(get_post_meta($row->coupon_group_id, 'direktt_cross_sell_max_usage', true));
+        if (!$max_usage) $max_usage = 0;
+
+        $used_count = direktt_cross_sell_get_used_individual_count(intval($row->ID));
+
+        // Hide fully used individual coupons
+        if ($max_usage > 0 && $used_count >= $max_usage) continue;
+
+        $filtered_individual_results[] = $row;
+    }
+
+    if (empty($filtered_individual_results)) {
+        echo '<p>' . esc_html__('There are no active or valid individual coupons issued', 'direktt-cross-sell') . '</p>';
+    } else {
+        echo '<table><thead><tr>';
+        echo '<th>' . esc_html__('Partner Name', 'direktt-cross-sell') . '</th>';
+        echo '<th>' . esc_html__('Coupon Name', 'direktt-cross-sell') . '</th>';
+        echo '<th>' . esc_html__('Issued', 'direktt-cross-sell') . '</th>';
+        echo '<th>' . esc_html__('Expires', 'direktt-cross-sell') . '</th>';
+        echo '<th>' . esc_html__('Used', 'direktt-cross-sell') . '</th>';
+        echo '<th>' . esc_html__('View coupon', 'direktt-cross-sell') . '</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ($filtered_individual_results as $row) {
+            // Group type check (individual only)
+
+            $partner_post = get_post($row->partner_id);
+            $partner_name = $partner_post ? esc_html($partner_post->post_title) : esc_html__('Unknown', 'direktt-cross-sell');
+            $coupon_group_post = get_post($row->coupon_group_id);
+            $group_title = $coupon_group_post ? esc_html($coupon_group_post->post_title) : esc_html__('Unknown', 'direktt-cross-sell');
+            $issued = esc_html(mysql2date('Y-m-d H:i:s', $row->coupon_time));
+            $expires = (empty($row->coupon_expires) || $row->coupon_expires == '0000-00-00 00:00:00')
+                ? esc_html__('No expiry', 'direktt-cross-sell')
+                : esc_html(mysql2date('Y-m-d H:i:s', $row->coupon_expires));
+            $used_count = direktt_cross_sell_get_used_individual_count(intval($row->ID));
+
+            echo '<tr>';
+            echo '<td>' . $partner_name . '</td>';
+            echo '<td>' . $group_title . '</td>';
+            echo '<td>' . $issued . '</td>';
+            echo '<td>' . $expires . '</td>';
+            echo '<td>' . $used_count . ' / ' . ($max_usage > 0 ? $max_usage : 'Unlimited') . '</td>';
+            $coupon_url = add_query_arg([
+                'direktt_action' => 'view_coupon',
+                'coupon_id' => $row->ID
+            ]);
+            echo '<td><a href="' . esc_url($coupon_url) . '">' . esc_html__('View Coupon', 'direktt-cross-sell') . '</a></td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table>';
+    }
+    return ob_get_clean();
+}
+
+function direktt_cross_sell_coupon_validation()
+{
+
+    global $direktt_user;
+    global $wpdb;
+
+    $subscription_id = $direktt_user['direktt_user_id'];
+
+    ob_start();
+
+    echo 'Validation';
+    var_dump($_GET);
+
+    return ob_get_clean();
 }
 
 function direktt_cross_sell_process_coupon_invalidate()
