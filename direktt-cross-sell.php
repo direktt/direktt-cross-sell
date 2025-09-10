@@ -48,6 +48,9 @@ add_shortcode('direktt_cross_sell_my_coupons', 'direktt_cross_sell_my_coupons');
 // [direktt_cross_sell_coupon_validation] shortcode implementation
 add_shortcode('direktt_cross_sell_coupon_validation', 'direktt_cross_sell_coupon_validation');
 
+// [direktt_cross_sell_bulk_coupons] shortcode implementation
+add_shortcode('direktt_cross_sell_bulk_coupons', 'direktt_cross_sell_bulk_coupons_shortcode');
+
 function direktt_cross_sell_activation_check()
 {
     if (!function_exists('is_plugin_active')) {
@@ -104,7 +107,7 @@ function direktt_cross_sell_settings()
         update_option('direktt_cross_sell_review_categories', isset($_POST['direktt_cross_sell_review_categories']) ? intval($_POST['direktt_cross_sell_review_categories']) : 0);
         update_option('direktt_cross_sell_review_tags', isset($_POST['direktt_cross_sell_review_tags']) ? intval($_POST['direktt_cross_sell_review_tags']) : 0);
 
-        update_option('direktt_cross_sell_check_url', isset($_POST['direktt_cross_sell_check_url']) ? sanitize_text_field($_POST['direktt_cross_sell_check_url']) : '');
+        update_option('direktt_cross_sell_check_slug', isset($_POST['direktt_cross_sell_check_slug']) ? sanitize_text_field($_POST['direktt_cross_sell_check_slug']) : '');
         update_option('direktt_cross_sell_user_template', intval($_POST['direktt_cross_sell_user_template']));
         update_option('direktt_cross_sell_admin_template', intval($_POST['direktt_cross_sell_admin_template']));
         update_option('direktt_cross_sell_salesman_template', intval($_POST['direktt_cross_sell_salesman_template']));
@@ -118,7 +121,7 @@ function direktt_cross_sell_settings()
     $review_categories = get_option('direktt_cross_sell_review_categories', 0);
     $review_tags = get_option('direktt_cross_sell_review_tags', 0);
 
-    $check_url = get_option('direktt_cross_sell_check_url');
+    $check_slug = get_option('direktt_cross_sell_check_slug');
     $user_template = intval(get_option('direktt_cross_sell_user_template', 0));
     $admin_template = intval(get_option('direktt_cross_sell_admin_template', 0));
     $salesman_template = intval(get_option('direktt_cross_sell_salesman_template', 0));
@@ -196,10 +199,10 @@ function direktt_cross_sell_settings()
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="direktt_cross_sell_check_url">Coupon Validation Url</label></th>
+                    <th scope="row"><label for="direktt_cross_sell_check_slug">Coupon Validation Slug</label></th>
                     <td>
-                        <input type="text" name="direktt_cross_sell_check_url" id="direktt_cross_sell_check_url" value="<?php echo esc_attr($check_url); ?>" size="80" />
-                        <p class="description">Url of the page with the Cross-Sell Coupon Validation shortcode</p>
+                        <input type="text" name="direktt_cross_sell_check_slug" id="direktt_cross_sell_check_slug" value="<?php echo esc_attr($check_slug); ?>" size="80" />
+                        <p class="description">Slug of the page with the Cross-Sell Coupon Validation shortcode</p>
                     </td>
                 </tr>
                 <tr>
@@ -2108,8 +2111,8 @@ function direktt_cross_sell_my_coupons()
         $back_url = remove_query_arg(['direktt_action', 'coupon_id']);
         echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back to My Coupons', 'direktt-cross-sell') . '</a>';
 
-        $check_url = get_option('direktt_cross_sell_check_url');
-        $validation_url = site_url($check_url, 'https');
+        $check_slug = get_option('direktt_cross_sell_check_slug');
+        $validation_url = site_url($check_slug, 'https');
 
         $actionObject = json_encode(
             array(
@@ -2242,6 +2245,117 @@ function direktt_cross_sell_my_coupons()
                 'coupon_id' => $row->ID
             ]);
             echo '<td><a href="' . esc_url($coupon_url) . '">' . esc_html__('View Coupon', 'direktt-cross-sell') . '</a></td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table>';
+    }
+    return ob_get_clean();
+}
+
+function direktt_cross_sell_bulk_coupons_shortcode() {
+    global $direktt_user;
+    global $wpdb;
+
+    $table = $wpdb->prefix . 'direktt_cross_sell_issued';
+
+    $subscription_id = $direktt_user['direktt_user_id'];
+
+    if (isset($_GET['direktt_action']) && $_GET['direktt_action'] === 'view_coupon_bulk' && isset($_GET['coupon_id']) && isset($_GET['partner_id'])) {
+        ob_start();
+
+        $coupon_id = sanitize_text_field($_GET['coupon_id']);
+        $partner_id = sanitize_text_field($_GET['partner_id']);
+        $back_url = remove_query_arg(['direktt_action', 'coupon_id', 'partner_id']);
+        echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back to Available Coupons', 'direktt-cross-sell') . '</a>';
+
+        $check_slug = get_option('direktt_cross_sell_check_slug');
+        $validation_url = site_url($check_slug, 'https');
+
+        $actionObject = json_encode(
+            array(
+                "action" => array(
+                    "type" => "link",
+                    "params" => array(
+                        "url" => $validation_url,
+                        "target" => "app"
+                    ),
+                    "retVars" => array(
+                        "coupon_id" => $coupon_id,
+                        "partner_id" => $partner_id,
+                    )
+                )
+            )
+        );
+
+        ?>
+
+        <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+        <div id="canvas"></div>
+        <script type="text/javascript">
+            const qrCode = new QRCodeStyling({
+                width: 350,
+                height: 350,
+                type: "svg",
+                data: '<?php echo $actionObject ?>',
+                image: "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg",
+                dotsOptions: {
+                    color: "#4267b2",
+                    type: "rounded"
+                },
+                backgroundOptions: {
+                    color: "#e9ebee",
+                },
+                imageOptions: {
+                    crossOrigin: "anonymous",
+                    margin: 20
+                }
+            });
+
+            qrCode.append(document.getElementById("canvas"));
+            /* qrCode.download({
+                name: "qr",
+                extension: "svg"
+            });*/
+        </script>
+
+        <?php
+  
+        return ob_get_clean();
+    }
+
+    ob_start();
+    echo '<h2>' . esc_html__('Available Bulk Coupons', 'direktt-cross-sell') . '</h2>';
+
+    $filtered_bulk_results = direktt_cross_sell_get_all_available_bulk_coupons();
+
+    if (empty($filtered_bulk_results)) {
+        echo '<p>' . esc_html__('No active or valid bulk coupons available.', 'direktt-cross-sell') . '</p>';
+    } else {
+        echo '<table><thead><tr>';
+        echo '<th>' . esc_html__('Partner Name', 'direktt-cross-sell') . '</th>';
+        echo '<th>' . esc_html__('Coupon Group', 'direktt-cross-sell') . '</th>';
+        echo '<th>' . esc_html__('Expires', 'direktt-cross-sell') . '</th>';
+        echo '<th>' . esc_html__('Actions', 'direktt-cross-sell') . '</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ($filtered_bulk_results as $coupon) {
+
+            $expiry_display = empty($coupon['expires']) || $coupon['expires'] === '0000-00-00 00:00:00'
+                ? 'No expiry'
+                : esc_html($coupon['expires']);
+
+            echo '<tr>';
+            echo '<td>' . esc_html($coupon['partner_title']) . '</td>';
+            echo '<td>' . esc_html($coupon['coupon_group_title']) . '</td>';
+            echo '<td>' . $expiry_display . '</td>';
+            echo '<td>';
+            $view_url = add_query_arg([
+                'direktt_action' => 'view_coupon_bulk',
+                'coupon_id' => intval($coupon['coupon_group_id']),
+                'partner_id' => intval($coupon['partner_id']),
+            ]);
+            echo '<a class="button button-primary" href="' . esc_url($view_url) . '">' . esc_html__('View', 'direktt-cross-sell') . '</a>';
+            echo '</td>';
             echo '</tr>';
         }
         echo '</tbody></table>';
