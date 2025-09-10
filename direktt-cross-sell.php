@@ -1275,7 +1275,7 @@ function direktt_cross_sell_user_can_review()
     return false;
 }
 
-function direktt_cross_sell_user_can_validate($partner_id )
+function direktt_cross_sell_user_can_validate($partner_id)
 {
     global $direktt_user;
 
@@ -2127,14 +2127,14 @@ function direktt_cross_sell_my_coupons()
     global $wpdb;
 
     $subscription_id = $direktt_user['direktt_user_id'];
-    
-    if(!isset( $subscription_id)) return;
+
+    if (!isset($subscription_id)) return;
 
     $table = $wpdb->prefix . 'direktt_cross_sell_issued';
     $now = current_time('mysql');
 
     // --- Show Use Individual Coupon Screen ---
-    if (isset($_GET['direktt_action']) && $_GET['direktt_action'] === 'view_coupon' && isset($_GET['coupon_id']) ) {
+    if (isset($_GET['direktt_action']) && $_GET['direktt_action'] === 'view_coupon' && isset($_GET['coupon_id'])) {
 
         $coupons = $wpdb->get_results($wpdb->prepare("
         SELECT * FROM $table
@@ -2364,10 +2364,14 @@ function direktt_cross_sell_bulk_coupons_shortcode()
             document.getElementById("share").addEventListener("click", async () => {
                 // Export QR code as canvas
                 qrCode.getRawData("png").then(async (blob) => {
-                    const file = new File([blob], "qr-code.png", { type: "image/png" });
+                    const file = new File([blob], "qr-code.png", {
+                        type: "image/png"
+                    });
 
                     // Use Web Share API
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    if (navigator.canShare && navigator.canShare({
+                            files: [file]
+                        })) {
                         try {
                             await navigator.share({
                                 title: "QR Code", // u kupon ne znam sta je ovo proveriti ??
@@ -2430,18 +2434,59 @@ function direktt_cross_sell_bulk_coupons_shortcode()
     return ob_get_clean();
 }
 
+function direktt_cross_sell_get_partner_and_group_by_coupon_guid($coupon_guid)
+{
+    global $wpdb;
+    $table = $wpdb->prefix . 'direktt_cross_sell_issued';
+    $coupon_guid = sanitize_text_field($coupon_guid);
+
+    $result = $wpdb->get_row($wpdb->prepare(
+        "SELECT partner_id, coupon_group_id FROM $table WHERE coupon_guid = %s LIMIT 1",
+        $coupon_guid
+    ), ARRAY_A);
+
+    return $result ? $result : false;
+}
+
 function direktt_cross_sell_coupon_validation()
 {
 
-    global $direktt_user;
     global $wpdb;
 
-    $subscription_id = $direktt_user['direktt_user_id'];
+    if (isset($_GET['coupon_code'])) {
+        $coupon_code = sanitize_text_field($_GET['coupon_code']);
+        $additional_data = direktt_cross_sell_get_partner_and_group_by_coupon_guid($coupon_code);
+        if ($additional_data) {
+            $coupon_id = $additional_data['coupon_group_id'];
+            $partner_id =  $additional_data['partner_id'];
+        } else {
+            ob_start();
+            echo esc_html__('The coupon code is not valid', 'direktt-cross-sell');
+            return ob_get_clean();
+        }
+    } else if (isset($_GET['coupon_id']) && isset($_GET['partner_id'])) {
+        $coupon_id = intval($_GET['coupon_id']);
+        $partner_id = intval($_GET['partner_id']);
+    } else {
+        return;
+    }
+
+    if (!direktt_cross_sell_user_can_validate($partner_id)) {
+        return;
+    }
+
+    // Display data for Individual Coupon and allow usage if eveything ok
+
+    if (isset( $coupon_code )) {
+
+        ob_start();
+
+        return ob_get_clean();
+    }
+
+    // Display data for Bulk Coupon and allow usage if eveything ok
 
     ob_start();
-
-    echo 'Validation';
-    var_dump($_GET);
 
     return ob_get_clean();
 }
