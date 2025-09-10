@@ -488,45 +488,43 @@ function direktt_cross_sell_partners_render_reports_meta_box($post)
 
     // Use esc to be safe
     $post_id = intval($post->ID);
-?>
-    <div class="direktt-reports-meta-box">
-        <p>
-            <label for="direktt-report-range"><strong><?php echo esc_html__('Range', 'direktt-cross-sell'); ?></strong></label>
-            <select id="direktt-report-range" name="direktt_report_range">
-                <option value="7"><?php echo esc_html__('Last 7 days', 'direktt-cross-sell'); ?></option>
-                <option value="30"><?php echo esc_html__('Last 30 days', 'direktt-cross-sell'); ?></option>
-                <option value="90"><?php echo esc_html__('Last 90 days', 'direktt-cross-sell'); ?></option>
-                <option value="custom"><?php echo esc_html__('Custom date range', 'direktt-cross-sell'); ?></option>
-            </select>
-        </p>
-
-        <div id="direktt-custom-dates" style="display: none; margin-top: 8px;">
-            <p>
-                <label for="direktt-date-from"><?php echo esc_html__('From', 'direktt-cross-sell'); ?></label>
+    ?>
+    <table class="form-table">
+        <tr>
+            <th scope="row"><label for="direktt-report-range"><?php echo esc_html__('Range', 'direktt-cross-sell'); ?></label></th>
+            <td>
+                <select id="direktt-report-range" name="direktt_report_range">
+                    <option value="7"><?php echo esc_html__('Last 7 days', 'direktt-cross-sell'); ?></option>
+                    <option value="30"><?php echo esc_html__('Last 30 days', 'direktt-cross-sell'); ?></option>
+                    <option value="90"><?php echo esc_html__('Last 90 days', 'direktt-cross-sell'); ?></option>
+                    <option value="custom"><?php echo esc_html__('Custom date range', 'direktt-cross-sell'); ?></option>
+                </select>
+            </td>
+        </tr>
+        <tr style="display: none;" id="direktt-custom-dates">
+            <th scope="row"><label for="direktt-date-from"><?php echo esc_html__('From - To', 'direktt-cross-sell'); ?></label></th>
+            <td>
                 <input type="date" id="direktt-date-from" name="direktt_date_from" />
-            </p>
-            <p>
-                <label for="direktt-date-to"><?php echo esc_html__('To', 'direktt-cross-sell'); ?></label>
+                <?php echo esc_html__('-', 'direktt-cross-sell'); ?>
                 <input type="date" id="direktt-date-to" name="direktt_date_to" />
-            </p>
-        </div>
+            </td>
+        </tr>
+    </table>
 
-        <p style="margin-top:12px;">
-            <button type="button" class="button" id="direktt-generate-issued"><?php echo esc_html__('Generate Issued Report', 'direktt-cross-sell'); ?></button>
-            <button type="button" class="button" id="direktt-generate-used"><?php echo esc_html__('Generate Used Report', 'direktt-cross-sell'); ?></button>
-        </p>
+    <p>
+        <button type="button" class="button" id="direktt-generate-issued"><?php echo esc_html__('Generate Issued Report', 'direktt-cross-sell'); ?></button>
+        <button type="button" class="button" id="direktt-generate-used"><?php echo esc_html__('Generate Used Report', 'direktt-cross-sell'); ?></button>
+    </p>
 
-        <!-- Hidden field for post_id so JS can read it -->
-        <input type="hidden" id="direktt-post-id" value="<?php echo esc_attr($post_id); ?>" />
-    </div>
+    <input type="hidden" id="direktt-post-id" value="<?php echo esc_attr($post_id); ?>" />
     <script>
         jQuery(document).ready(function($) {
             // toggle custom date inputs
             $('#direktt-report-range').on('change', function() {
                 if ($(this).val() === 'custom') {
-                    $('#direktt-custom-dates').slideDown();
+                    $('#direktt-custom-dates').fadeIn();
                 } else {
-                    $('#direktt-custom-dates').slideUp();
+                    $('#direktt-custom-dates').fadeOut();
                 }
             });
 
@@ -556,7 +554,6 @@ function direktt_cross_sell_partners_render_reports_meta_box($post)
             // Bind buttons
             $('#direktt-generate-issued').on('click', function() {
                 event.preventDefault();
-                var $btn = $(this);
                 var data = collectReportData('issued');
                 // Basic client-side validation for custom range
                 if (data.range === 'custom') {
@@ -570,6 +567,8 @@ function direktt_cross_sell_partners_render_reports_meta_box($post)
                     }
                 }
 
+                $(this).prop('disabled', true);
+                $(this).text("<?php echo esc_js(__('Generating report...', 'direktt-cross-sell')); ?>");
                 $.ajax({
                     url: '<?php echo esc_js(admin_url('admin-ajax.php')); ?>',
                     method: 'POST',
@@ -582,14 +581,16 @@ function direktt_cross_sell_partners_render_reports_meta_box($post)
                         }
                     },
                     error: function() {
-
+                        alert("<?php echo esc_js(__('There was an error.', 'direktt-cross-sell')); ?>");
                     }
+                }).always(function() {
+                    $('#direktt-generate-issued').prop('disabled', false);
+                    $('#direktt-generate-issued').text("<?php echo esc_js(__('Generate Issued Report', 'direktt-cross-sell')); ?>");
                 });
             });
 
             $('#direktt-generate-used').on('click', function() {
                 event.preventDefault();
-                var $btn = $(this);
                 var data = collectReportData('used');
                 if (data.range === 'custom') {
                     if (!data.from || !data.to) {
@@ -602,6 +603,8 @@ function direktt_cross_sell_partners_render_reports_meta_box($post)
                     }
                 }
 
+                $(this).prop('disabled', true);
+                $(this).text("<?php echo esc_js(__('Generating report...', 'direktt-cross-sell')); ?>");
                 $.ajax({
                     url: '<?php echo esc_js(admin_url('admin-ajax.php')); ?>',
                     method: 'POST',
@@ -612,7 +615,13 @@ function direktt_cross_sell_partners_render_reports_meta_box($post)
                         } else {
                             alert(response.data);
                         }
+                    },
+                    error: function() {
+                        alert("<?php echo esc_js(__('There was an error.', 'direktt-cross-sell')); ?>");
                     }
+                }).always(function() {
+                    $('#direktt-generate-used').prop('disabled', false);
+                    $('#direktt-generate-used').text("<?php echo esc_js(__('Generate Used Report', 'direktt-cross-sell')); ?>");
                 });
             });
         });
