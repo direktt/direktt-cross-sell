@@ -30,6 +30,7 @@ register_activation_hook(__FILE__, 'direktt_cross_sell_create_used_bulk_database
 //Cross-Sell Partner Meta Boxes
 add_action('add_meta_boxes', 'direktt_cross_sell_partners_add_custom_box');
 add_action('save_post', 'save_direktt_cross_sell_partner_meta');
+add_action('admin_enqueue_scripts', 'direktt_cross_sell_partners_enqueue_scripts');
 
 //Cross-Sell Coupon Groups Meta Boxes
 add_action('add_meta_boxes', 'direktt_cross_sell_coupon_groups_add_custom_box');
@@ -365,7 +366,7 @@ function direktt_cross_sell_partners_add_custom_box()
 {
     add_meta_box(
         'direktt_cs_partners_mb',           // ID
-        __('Partner Properties', 'direktt-cross-sell'),                       // Title
+        esc_html__('Partner Properties', 'direktt-cross-sell'),                       // Title
         'direktt_cross_sell_partners_render_custom_box',    // Callback function
         'direkttcspartners',                    // CPT slug
         'normal',                        // Context
@@ -374,7 +375,7 @@ function direktt_cross_sell_partners_add_custom_box()
 
     add_meta_box(
         'direktt_cs_partners_reports_mb',           // ID
-        __('CSV Reports', 'direktt-cross-sell'),                       // Title
+        esc_html__('CSV Reports', 'direktt-cross-sell'),                       // Title
         'direktt_cross_sell_partners_render_reports_meta_box',    // Callback function
         'direkttcspartners',                    // CPT slug
         'normal',                        // Context
@@ -391,6 +392,10 @@ function direktt_cross_sell_partners_render_custom_box($post)
     $partner_tags = get_post_meta($post->ID, 'direktt_cross_sell_partner_tags', true);
 
     $coupon_groups = direktt_cross_sell_get_coupon_groups();
+
+    $qr_code_image = get_post_meta($post->ID, 'direktt_cross_sell_qr_code_image', true);
+    $qr_code_color = get_post_meta($post->ID, 'direktt_cross_sell_qr_code_color', true);
+    $qr_code_bg_color = get_post_meta($post->ID, 'direktt_cross_sell_qr_code_bg_color', true);
 
     wp_nonce_field('direktt_cross_sell_save', 'direktt_cross_sell_nonce');
 ?>
@@ -480,6 +485,71 @@ function direktt_cross_sell_partners_render_custom_box($post)
                 <p class="description">Add coupon groups for this partner.</p>
             </td>
         </tr>
+        <tr>
+            <th scope="row"><label for="direktt_cross_sell_qr_code_image">QR Code Image</label></th>
+            <td>
+                <input type="text" id="direktt_cross_sell_qr_code_image" name="direktt_cross_sell_qr_code_image" value="<?php echo esc_attr($qr_code_image ?? ''); ?>" />
+                <input type="button" id="direktt_cross_sell_qr_code_image_button" class="button" value="Choose Image" />
+                <p class="description">TODO Promeniti ovaj tekst: This image will be in center of the QR Code.</p>
+                <script>
+                    jQuery(document).ready(function($){
+                        var mediaUploader;
+
+                        $('#direktt_cross_sell_qr_code_image_button').click(function(e) {
+                            e.preventDefault();
+
+                            // If the uploader object has already been created, reopen it
+                            if (mediaUploader) {
+                                mediaUploader.open();
+                                return;
+                            }
+
+                            // Create the media uploader
+                            mediaUploader = wp.media.frames.file_frame = wp.media({
+                                title: '<?php echo esc_js(__('Choose Image', 'direktt-cross-sell')); ?>',
+                                button: {
+                                    text: '<?php echo esc_js(__('Choose Image', 'direktt-cross-sell')); ?>'
+                                },
+                                multiple: false
+                            });
+
+                            // When an image is selected, run a callback
+                            mediaUploader.on('select', function() {
+                                var attachment = mediaUploader.state().get('selection').first().toJSON();
+                                $('#direktt_cross_sell_qr_code_image').val(attachment.url);
+                            });
+
+                            // Open the uploader dialog
+                            mediaUploader.open();
+                        });
+                    });
+                </script>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="direktt_cross_sell_qr_code_color">QR Code Color</label></th>
+            <td>
+                <input type="text" id="direktt_cross_sell_qr_code_color" name="direktt_cross_sell_qr_code_color" value="<?php echo esc_attr($qr_code_color ?? '#000000'); ?>" />
+                <p class="description">TODO Promeniti ovaj tekst: This color will be the color of the dots in the QR Code.</p>
+                <script>
+                    jQuery(document).ready(function($) {
+                        $('#direktt_cross_sell_qr_code_color').wpColorPicker();
+                    });
+                </script>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="direktt_cross_sell_qr_code_bg_color">QR Code Color</label></th>
+            <td>
+                <input type="text" id="direktt_cross_sell_qr_code_bg_color" name="direktt_cross_sell_qr_code_bg_color" value="<?php echo esc_attr($qr_code_bg_color ?? '#ffffff'); ?>" />
+                <p class="description">TODO Promeniti ovaj tekst: This color will be the color of the background in the QR Code.</p>
+                <script>
+                    jQuery(document).ready(function($) {
+                        $('#direktt_cross_sell_qr_code_bg_color').wpColorPicker();
+                    });
+                </script>
+            </td>
+        </tr>
     </table>
 <?php
 }
@@ -525,9 +595,9 @@ function direktt_cross_sell_partners_render_reports_meta_box($post)
             // toggle custom date inputs
             $('#direktt-report-range').on('change', function() {
                 if ($(this).val() === 'custom') {
-                    $('#direktt-custom-dates').fadeIn();
+                    $('#direktt-custom-dates').show();
                 } else {
-                    $('#direktt-custom-dates').fadeOut();
+                    $('#direktt-custom-dates').hide();
                 }
             });
 
@@ -901,13 +971,43 @@ function save_direktt_cross_sell_partner_meta($post_id)
             sanitize_text_field($_POST['direktt_cross_sell_issue_tags'])
         );
     }
+    if (isset($_POST['direktt_cross_sell_qr_code_image'])) {
+        update_post_meta(
+            $post_id,
+            'direktt_cross_sell_qr_code_image',
+            sanitize_text_field($_POST['direktt_cross_sell_qr_code_image'])
+        );
+    }
+    if (isset($_POST['direktt_cross_sell_qr_code_color'])) {
+        update_post_meta(
+            $post_id,
+            'direktt_cross_sell_qr_code_color',
+            sanitize_text_field($_POST['direktt_cross_sell_qr_code_color'])
+        );
+    }
+    if (isset($_POST['direktt_cross_sell_qr_code_bg_color'])) {
+        update_post_meta(
+            $post_id,
+            'direktt_cross_sell_qr_code_bg_color',
+            sanitize_text_field($_POST['direktt_cross_sell_qr_code_bg_color'])
+        );
+    }
+}
+
+function direktt_cross_sell_partners_enqueue_scripts($hook) {
+    $screen = get_current_screen();
+    if ( in_array( $hook, ['post.php', 'post-new.php'] ) && $screen->post_type === 'direkttcspartners' ) {
+        wp_enqueue_media();
+        wp_enqueue_style('wp-color-picker');
+        wp_enqueue_script('wp-color-picker');
+    }
 }
 
 function direktt_cross_sell_coupon_groups_add_custom_box()
 {
     add_meta_box(
         'direktt_cs_partners_mb',           // ID
-        __('Partner Properties', 'direktt-cross-sell'),                       // Title
+        esc_html__('Coupon Properties', 'direktt-cross-sell'),                       // Title
         'direktt_cross_sell_coupon_groups_render_custom_box',    // Callback function
         'direkttcscoupon',                    // CPT slug
         'normal',                        // Context
@@ -925,6 +1025,7 @@ function direktt_cross_sell_coupon_groups_render_custom_box($post)
     if ($max_usage === false) $max_usage = '1';
     $max_issuance = get_post_meta($post->ID, 'direktt_cross_sell_max_issuance', true);
     $group_template = get_post_meta($post->ID, 'direktt_cross_sell_group_template', true);
+    $qr_code_message = get_post_meta($post->ID, 'direktt_cross_sell_qr_code_message', true);
 
     wp_nonce_field('direktt_cross_sell_save', 'direktt_cross_sell_nonce');
 ?>
@@ -954,14 +1055,14 @@ function direktt_cross_sell_coupon_groups_render_custom_box($post)
                 <p class="description">Maximum number of usages per coupon. <br>For Bulk coupons, maximum number of total usages. If this number is exceeded, the coupon will not be available for issuance and will not validate.</p>
             </td>
         </tr>
-        <tr>
+        <tr id="direktt_cs_max_issuance">
             <th scope="row"><label for="direktt_cross_sell_max_issuance">How many individual coupons can be issued in total?<br>Not used for bulk coupons</label></th>
             <td>
                 <input type="text" name="direktt_cross_sell_max_issuance" id="direktt_cross_sell_max_issuance" value="<?php echo $max_issuance ? intval($max_issuance) : 0; ?>" /> 0 - unlimited
                 <p class="description">Maximum total number of issuances per individual coupon. If this number is exceeded, the coupon will not be available for issuance</p>
             </td>
         </tr>
-        <tr>
+        <tr id="direktt_cs_template">
             <th scope="row"><label for="direktt_cross_sell_group_template">Message Template</label></th>
             <td>
                 <select name="direktt_cross_sell_group_template" id="direktt_cross_sell_group_template">
@@ -975,7 +1076,40 @@ function direktt_cross_sell_coupon_groups_render_custom_box($post)
                 <p class="description">Message Template used when Coupon is issued. If none set, default will be sent</p>
             </td>
         </tr>
+        <tr id="direktt_cs_qr_message">
+            <th scope="row"><label for="direktt_cross_sell_qr_code_message">QR Code Message</label></th>
+            <td>
+                <input type="text" name="direktt_cross_sell_qr_code_message" id="direktt_cross_sell_qr_code_message" value="<?php echo esc_attr($qr_code_message); ?>" />
+                <p class="description">TODO Promeniti ovaj tekst: When Share button on the Bulk Coupons shortcode page is clicked this message will be displayed with the QR Code.</p>
+            </td>
+        </tr>
     </table>
+    <script>
+        jQuery(document).ready(function($) {
+            var defaultType = $('#direktt_cross_sell_group_type').val();
+            if (defaultType === '1') {
+                $('#direktt_cs_max_issuance').show();
+                $('#direktt_cs_template').show();
+                $('#direktt_cs_qr_message').hide();
+            } else {
+                $('#direktt_cs_max_issuance').hide();
+                $('#direktt_cs_template').hide();
+                $('#direktt_cs_qr_message').show();
+            }
+
+            $('#direktt_cross_sell_group_type').on('change', function() {
+                if ($(this).val() === '1') {
+                    $('#direktt_cs_max_issuance').show();
+                    $('#direktt_cs_template').show();
+                    $('#direktt_cs_qr_message').hide();
+                } else {
+                    $('#direktt_cs_max_issuance').hide();
+                    $('#direktt_cs_template').hide();
+                    $('#direktt_cs_qr_message').show();
+                }
+            });
+        });
+    </script>
     <?php
 }
 
@@ -1020,6 +1154,13 @@ function save_direktt_cross_sell_coupon_groups_meta($post_id)
             $post_id,
             'direktt_cross_sell_group_template',
             sanitize_text_field($_POST['direktt_cross_sell_group_template'])
+        );
+    }
+    if (isset($_POST['direktt_cross_sell_qr_code_message'])) {
+        update_post_meta(
+            $post_id,
+            'direktt_cross_sell_qr_code_message',
+            sanitize_text_field($_POST['direktt_cross_sell_qr_code_message'])
         );
     }
 }
@@ -2108,6 +2249,10 @@ function direktt_cross_sell_my_coupons()
 
         ob_start();
 
+        $qr_code_image = get_post_meta(intval($coupon->partner_id), 'direktt_cross_sell_qr_code_image', true);
+        $qr_code_color = get_post_meta(intval($coupon->partner_id), 'direktt_cross_sell_qr_code_color', true);
+        $qr_code_bg_color = get_post_meta(intval($coupon->partner_id), 'direktt_cross_sell_qr_code_bg_color', true);
+
         $back_url = remove_query_arg(['direktt_action', 'coupon_id']);
         echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back to My Coupons', 'direktt-cross-sell') . '</a>';
 
@@ -2139,13 +2284,13 @@ function direktt_cross_sell_my_coupons()
                 height: 350,
                 type: "svg",
                 data: '<?php echo $actionObject ?>',
-                image: "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg",
+                image: '<?php echo $qr_code_image ? esc_js($qr_code_image) : ''; ?>',
                 dotsOptions: {
-                    color: "#4267b2",
+                    color: '<?php echo $qr_code_color ? esc_js($qr_code_color) : '#000000'; ?>',
                     type: "rounded"
                 },
                 backgroundOptions: {
-                    color: "#e9ebee",
+                    color: '<?php echo $qr_code_bg_color ? esc_js($qr_code_bg_color) : '#ffffff'; ?>',
                 },
                 imageOptions: {
                     crossOrigin: "anonymous",
@@ -2269,6 +2414,12 @@ function direktt_cross_sell_bulk_coupons_shortcode() {
         echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back to Available Coupons', 'direktt-cross-sell') . '</a>';
         echo '<button id="share">' . esc_html__('Share', 'direktt-cross-sell') . '</button>';
 
+        $qr_code_image = get_post_meta(intval($partner_id), 'direktt_cross_sell_qr_code_image', true);
+        $qr_code_color = get_post_meta(intval($partner_id), 'direktt_cross_sell_qr_code_color', true);
+        $qr_code_bg_color = get_post_meta(intval($partner_id), 'direktt_cross_sell_qr_code_bg_color', true);
+
+        $qr_code_message = get_post_meta(intval($coupon_id), 'direktt_cross_sell_qr_code_message', true);
+
         $check_slug = get_option('direktt_cross_sell_check_slug');
         $validation_url = site_url($check_slug, 'https');
 
@@ -2298,13 +2449,13 @@ function direktt_cross_sell_bulk_coupons_shortcode() {
                 height: 350,
                 type: "svg",
                 data: '<?php echo $actionObject ?>',
-                image: "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg",
+                image: '<?php echo $qr_code_image ? esc_js($qr_code_image) : ''; ?>',
                 dotsOptions: {
-                    color: "#4267b2",
+                    color: '<?php echo $qr_code_color ? esc_js($qr_code_color) : '#000000'; ?>',
                     type: "rounded"
                 },
                 backgroundOptions: {
-                    color: "#e9ebee",
+                    color: '<?php echo $qr_code_bg_color ? esc_js($qr_code_bg_color) : '#ffffff'; ?>',
                 },
                 imageOptions: {
                     crossOrigin: "anonymous",
@@ -2319,25 +2470,42 @@ function direktt_cross_sell_bulk_coupons_shortcode() {
             });*/
 
             document.getElementById("share").addEventListener("click", async () => {
-                // Export QR code as canvas
                 qrCode.getRawData("png").then(async (blob) => {
-                    const file = new File([blob], "qr-code.png", { type: "image/png" });
+                    const img = new Image();
+                    img.onload = async () => {
+                        const margin = 20; // margin in pixels
+                        const bgColor = '<?php echo $qr_code_bg_color ? esc_js($qr_code_bg_color) : "#ffffff"; ?>';
+                        const canvas = document.createElement("canvas");
+                        canvas.width = img.width + margin * 2;
+                        canvas.height = img.height + margin * 2;
+                        const ctx = canvas.getContext("2d");
 
-                    // Use Web Share API
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({
-                                title: "QR Code", // u kupon ne znam sta je ovo proveriti ??
-                                text: "Scan this QR code!", // u kupon
-                                files: [file]
-                            });
-                            console.log("Shared successfully!");
-                        } catch (err) {
-                            console.error("Share failed:", err.message);
-                        }
-                    } else {
-                        alert("Your browser does not support sharing files.");
-                    }
+                        // Fill background
+                        ctx.fillStyle = bgColor;
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                        // Draw QR code in center
+                        ctx.drawImage(img, margin, margin);
+
+                        // Convert to blob
+                        canvas.toBlob(async (newBlob) => {
+                            const file = new File([newBlob], "qr-code.png", { type: "image/png" });
+
+                            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                try {
+                                    await navigator.share({
+                                        text: '<?php echo esc_js($qr_code_message); ?>',
+                                        files: [file]
+                                    });
+                                } catch (err) {
+                                    alert('<?php echo esc_js(__("Share failed:", 'direktt-cross-sell')); ?> ' + err.message);
+                                }
+                            } else {
+                                alert('<?php echo esc_js(__("Your browser does not support sharing files.", 'direktt-cross-sell')); ?>');
+                            }
+                        }, "image/png");
+                    };
+                    img.src = URL.createObjectURL(blob);
                 });
             });
         </script>
