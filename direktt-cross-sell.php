@@ -561,11 +561,11 @@ function direktt_cross_sell_partners_render_reports_meta_box($post)
                 // Basic client-side validation for custom range
                 if (data.range === 'custom') {
                     if (!data.from || !data.to) {
-                        alert("<?php echo esc_html__( 'Please select both From and To dates for a custom range.', 'direktt-cross-sell' ); ?>");
+                        alert("<?php echo esc_js(__('Please select both From and To dates for a custom range.', 'direktt-cross-sell')); ?>");
                         return;
                     }
                     if (data.from > data.to) {
-                        alert("<?php echo esc_html__( 'The From date cannot be later than the To date.', 'direktt-cross-sell' ); ?>");
+                        alert("<?php echo esc_js(__('The From date cannot be later than the To date.', 'direktt-cross-sell')); ?>");
                         return;
                     }
                 }
@@ -593,11 +593,11 @@ function direktt_cross_sell_partners_render_reports_meta_box($post)
                 var data = collectReportData('used');
                 if (data.range === 'custom') {
                     if (!data.from || !data.to) {
-                        alert("<?php echo esc_html__('Please select both From and To dates for a custom range.', 'direktt-cross-sell'); ?>");
+                        alert("<?php echo esc_js(__('Please select both From and To dates for a custom range.', 'direktt-cross-sell')); ?>");
                         return;
                     }
                     if (data.from > data.to) {
-                        alert("<?php echo esc_html__('The "From" date cannot be later than the "To" date.', 'direktt-cross-sell'); ?>");
+                        alert("<?php echo esc_js(__('The From date cannot be later than the To date.', 'direktt-cross-sell')); ?>");
                         return;
                     }
                 }
