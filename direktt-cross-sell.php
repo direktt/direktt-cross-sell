@@ -2310,6 +2310,7 @@ function direktt_cross_sell_bulk_coupons_shortcode()
         $partner_id = sanitize_text_field($_GET['partner_id']);
         $back_url = remove_query_arg(['direktt_action', 'coupon_id', 'partner_id']);
         echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back to Available Coupons', 'direktt-cross-sell') . '</a>';
+        echo '<button id="share">' . esc_html__('Share', 'direktt-cross-sell') . '</button>';
 
         $check_slug = get_option('direktt_cross_sell_check_slug');
         $validation_url = site_url($check_slug, 'https');
@@ -2359,6 +2360,29 @@ function direktt_cross_sell_bulk_coupons_shortcode()
                 name: "qr",
                 extension: "svg"
             });*/
+
+            document.getElementById("share").addEventListener("click", async () => {
+                // Export QR code as canvas
+                qrCode.getRawData("png").then(async (blob) => {
+                    const file = new File([blob], "qr-code.png", { type: "image/png" });
+
+                    // Use Web Share API
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                title: "QR Code", // u kupon ne znam sta je ovo proveriti ??
+                                text: "Scan this QR code!", // u kupon
+                                files: [file]
+                            });
+                            console.log("Shared successfully!");
+                        } catch (err) {
+                            console.error("Share failed:", err.message);
+                        }
+                    } else {
+                        alert("Your browser does not support sharing files.");
+                    }
+                });
+            });
         </script>
 
 <?php
