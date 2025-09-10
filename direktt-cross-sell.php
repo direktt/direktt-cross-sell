@@ -1559,6 +1559,7 @@ function direktt_cross_sell_process_use_coupon_individual($coupon)
 
     $wpdb = $GLOBALS['wpdb'];
     $used_table = $wpdb->prefix . 'direktt_cross_sell_used_individual';
+    $issued_table = $wpdb->prefix . 'direktt_cross_sell_issued';
 
     // RACE CONDITION SAFE usage check!
     $latest_used_count = direktt_cross_sell_get_used_individual_count(intval($coupon->ID));
@@ -1574,10 +1575,9 @@ function direktt_cross_sell_process_use_coupon_individual($coupon)
         wp_safe_redirect($redirect_url);
         exit;
     } else {
-
         $now_time = current_time('mysql');
-        $coupon = $wpdb->get_row($wpdb->prepare("SELECT * FROM $used_table WHERE ID = %d", $use_coupon_id));
-        if (!empty($coupon->coupon_expires) && $coupon->coupon_expires != '0000-00-00 00:00:00' && $coupon->coupon_expires < $now_time) {
+        $coupon_issued = $wpdb->get_row($wpdb->prepare("SELECT * FROM $issued_table WHERE ID = %d", $use_coupon_id));
+        if (!empty($coupon_issued->coupon_expires) && $coupon_issued->coupon_expires != '0000-00-00 00:00:00' && $coupon_issued->coupon_expires < $now_time) {
             // Redirect with error flag or message for expired coupon
             $redirect_url = add_query_arg([
                 'direktt_action'    => 'use_coupon_individual',
@@ -1591,7 +1591,7 @@ function direktt_cross_sell_process_use_coupon_individual($coupon)
         $inserted = $wpdb->insert(
             $used_table,
             [
-                'issued_id' => $coupon->ID,
+                'issued_id' => intval($coupon->ID),
                 'direktt_validator_user_id' => isset($GLOBALS['direktt_user']['direktt_user_id']) ? $GLOBALS['direktt_user']['direktt_user_id'] : '',
             ],
             [
@@ -1614,7 +1614,7 @@ function direktt_cross_sell_process_use_coupon_bulk($use_coupon_id, $use_partner
     $use_coupon_id = intval($use_coupon_id);
     $use_partner_id = intval($use_partner_id);
 
-    $direktt_receiver_user_id = isset($_GET['subscriptionId']) ? sanitize_text_field($_GET['subscriptionId']) : '';
+    $direktt_receiver_user_id = isset($_GET['subscriptionId']) ? sanitize_text_field($_GET['subscriptionId']) : NULL;
     $direktt_validator_user_id = isset($GLOBALS['direktt_user']['direktt_user_id']) ? $GLOBALS['direktt_user']['direktt_user_id'] : '';
 
     $wpdb = $GLOBALS['wpdb'];
