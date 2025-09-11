@@ -2446,7 +2446,15 @@ function direktt_cross_sell_my_coupons()
         $coupons = $wpdb->get_results($wpdb->prepare("
         SELECT * FROM $table
         WHERE ID = %d
-    ", intval($_GET['coupon_id'])));
+      AND direktt_receiver_user_id = %s
+      AND coupon_valid = 1
+", intval($_GET['coupon_id']), $subscription_id));
+
+        if (empty($coupons)) {
+            ob_start();
+            echo '<p>' . esc_html__('Coupon not found or you do not have permission to view it.', 'direktt-cross-sell') . '</p>';
+            return ob_get_clean();
+        }
 
         $coupon = $coupons[0];
 
