@@ -539,13 +539,136 @@ function direktt_cross_sell_partners_render_custom_box($post)
             </td>
         </tr>
         <tr>
-            <th scope="row"><label for="direktt_cross_sell_qr_code_bg_color">QR Code Color</label></th>
+            <th scope="row"><label for="direktt_cross_sell_qr_code_bg_color">QR Code Background Color</label></th>
             <td>
                 <input type="text" id="direktt_cross_sell_qr_code_bg_color" name="direktt_cross_sell_qr_code_bg_color" value="<?php echo esc_attr($qr_code_bg_color ?? '#ffffff'); ?>" />
                 <p class="description">TODO Promeniti ovaj tekst: This color will be the color of the background in the QR Code.</p>
                 <script>
                     jQuery(document).ready(function($) {
                         $('#direktt_cross_sell_qr_code_bg_color').wpColorPicker();
+                    });
+                </script>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="direktt_cross_sell_qr_code_bg_color">QR Code Preview</label></th>
+            <td>
+                <div id="canvas"></div>
+                <?php
+                $actionObject = json_encode(
+                    array(
+                        "action" => array(
+                            "type" => "link",
+                            "params" => array(
+                                "url" => "direktt.com",
+                                "target" => "browser"
+                            ),
+                            "retVars" => array()
+                        )
+                    )
+                );
+                ?>
+                <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+                <script type="text/javascript">
+                    const qrCode = new QRCodeStyling({
+                        width: 350,
+                        height: 350,
+                        type: "svg",
+                        data: '<?php echo $actionObject ?>',
+                        image: '<?php echo $qr_code_image ? esc_js($qr_code_image) : ''; ?>',
+                        dotsOptions: {
+                            color: '<?php echo $qr_code_color ? esc_js($qr_code_color) : '#000000'; ?>',
+                            type: "rounded"
+                        },
+                        backgroundOptions: {
+                            color: '<?php echo $qr_code_bg_color ? esc_js($qr_code_bg_color) : '#ffffff'; ?>',
+                        },
+                        imageOptions: {
+                            crossOrigin: "anonymous",
+                            margin: 20
+                        }
+                    });
+
+                    qrCode.append(document.getElementById("canvas"));
+
+                    jQuery(document).ready(function($) {
+                        $('#direktt_cross_sell_qr_code_image').on('change', function() {
+                            var newQrCode = new QRCodeStyling({
+                                width: 350,
+                                height: 350,
+                                type: "svg",
+                                data: '<?php echo $actionObject ?>',
+                                image: $('#direktt_cross_sell_qr_code_image').val() ? $('#direktt_cross_sell_qr_code_image').val() : '',
+                                dotsOptions: {
+                                    color: $('#direktt_cross_sell_qr_code_color').val() ? $('#direktt_cross_sell_qr_code_color').val() : '#000000',
+                                    type: "rounded"
+                                },
+                                backgroundOptions: {
+                                    color: $('#direktt_cross_sell_qr_code_bg_color').val() ? $('#direktt_cross_sell_qr_code_bg_color').val() : '#ffffff',
+                                },
+                                imageOptions: {
+                                    crossOrigin: "anonymous",
+                                    margin: 20
+                                }
+                            });
+
+                            $('#canvas').empty();
+                            newQrCode.append(document.getElementById("canvas"));
+                        });
+                        $('#direktt_cross_sell_qr_code_color').wpColorPicker({
+                            change: function (event, ui) {
+                                let color = ui.color.toString();
+
+                                var newQrCode = new QRCodeStyling({
+                                    width: 350,
+                                    height: 350,
+                                    type: "svg",
+                                    data: '<?php echo $actionObject ?>',
+                                    image: $('#direktt_cross_sell_qr_code_image').val() ? $('#direktt_cross_sell_qr_code_image').val() : '',
+                                    dotsOptions: {
+                                        color: color,
+                                        type: "rounded"
+                                    },
+                                    backgroundOptions: {
+                                        color: $('#direktt_cross_sell_qr_code_bg_color').val() ? $('#direktt_cross_sell_qr_code_bg_color').val() : '#ffffff',
+                                    },
+                                    imageOptions: {
+                                        crossOrigin: "anonymous",
+                                        margin: 20
+                                    }
+                                });
+
+                                $('#canvas').empty();
+                                newQrCode.append(document.getElementById("canvas"));
+                            }
+                        });
+                         $('#direktt_cross_sell_qr_code_bg_color').wpColorPicker({
+                            change: function (event, ui) {
+                                let color = ui.color.toString();
+
+                                var newQrCode = new QRCodeStyling({
+                                    width: 350,
+                                    height: 350,
+                                    type: "svg",
+                                    data: '<?php echo $actionObject ?>',
+                                    image: $('#direktt_cross_sell_qr_code_image').val() ? $('#direktt_cross_sell_qr_code_image').val() : '',
+                                    dotsOptions: {
+                                        color: $('#direktt_cross_sell_qr_code_color').val() ? $('#direktt_cross_sell_qr_code_color').val() : '#000000',
+                                        type: "rounded"
+                                    },
+                                    backgroundOptions: {
+                                        color: color,
+                                    },
+                                    imageOptions: {
+                                        crossOrigin: "anonymous",
+                                        margin: 20
+                                    }
+                                });
+
+                                $('#canvas').empty();
+                                newQrCode.append(document.getElementById("canvas"));
+                            }
+                        });
                     });
                 </script>
             </td>
@@ -1001,6 +1124,13 @@ function direktt_cross_sell_partners_enqueue_scripts($hook)
         wp_enqueue_media();
         wp_enqueue_style('wp-color-picker');
         wp_enqueue_script('wp-color-picker');
+        /* wp_enqueue_script(
+            'qr-code-styling', // Handle
+            'https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js', // Source
+            array(), // Dependencies (none in this case)
+            null, // Version (null since CDN manages it)
+            true // Load in footer
+        ); */
     }
 }
 
