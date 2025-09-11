@@ -31,6 +31,7 @@ register_activation_hook(__FILE__, 'direktt_cross_sell_create_used_bulk_database
 add_action('add_meta_boxes', 'direktt_cross_sell_partners_add_custom_box');
 add_action('save_post', 'save_direktt_cross_sell_partner_meta');
 add_action('admin_enqueue_scripts', 'direktt_cross_sell_partners_enqueue_scripts');
+add_action('wp_enqueue_scripts', 'direktt_cross_sell_enqueue_fe_scripts');
 
 //Cross-Sell Coupon Groups Meta Boxes
 add_action('add_meta_boxes', 'direktt_cross_sell_coupon_groups_add_custom_box');
@@ -568,7 +569,6 @@ function direktt_cross_sell_partners_render_custom_box($post)
                     )
                 );
                 ?>
-                <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
                 <script type="text/javascript">
                     const qrCode = new QRCodeStyling({
                         width: 350,
@@ -1124,13 +1124,25 @@ function direktt_cross_sell_partners_enqueue_scripts($hook)
         wp_enqueue_media();
         wp_enqueue_style('wp-color-picker');
         wp_enqueue_script('wp-color-picker');
-        /* wp_enqueue_script(
+        wp_enqueue_script(
             'qr-code-styling', // Handle
-            'https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js', // Source
+            plugin_dir_url( __FILE__ ). 'assets/js/qr-code-styling.js', // Source
             array(), // Dependencies (none in this case)
-            null, // Version (null since CDN manages it)
-            true // Load in footer
-        ); */
+            null,
+        );
+    }
+}
+
+function direktt_cross_sell_enqueue_fe_scripts($hook)
+{
+    global $enqueue_direktt_cross_sell_scripts;
+    if ($enqueue_direktt_cross_sell_scripts) {
+        wp_enqueue_script(
+            'qr-code-styling', // Handle
+            plugin_dir_url( __FILE__ ). 'assets/js/qr-code-styling.js', // Source
+            array(), // Dependencies (none in this case)
+            null,
+        );
     }
 }
 
@@ -2477,9 +2489,11 @@ function direktt_cross_sell_my_coupons()
             )
         );
 
-    ?>
+        global $enqueue_direktt_cross_sell_scripts;
+        $enqueue_direktt_cross_sell_scripts = true;
 
-        <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+        ?>
+
         <div id="canvas"></div>
         <script type="text/javascript">
             const qrCode = new QRCodeStyling({
@@ -2643,9 +2657,11 @@ function direktt_cross_sell_bulk_coupons_shortcode()
             )
         );
 
-    ?>
+        global $enqueue_direktt_cross_sell_scripts;
+        $enqueue_direktt_cross_sell_scripts = true;
 
-        <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+        ?>
+
         <div id="canvas"></div>
         <script type="text/javascript">
             const qrCode = new QRCodeStyling({
