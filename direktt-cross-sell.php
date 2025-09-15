@@ -49,6 +49,12 @@ add_shortcode('direktt_cross_sell_my_coupons', 'direktt_cross_sell_my_coupons');
 // [direktt_cross_sell_coupon_validation] shortcode implementation
 add_shortcode('direktt_cross_sell_coupon_validation', 'direktt_cross_sell_coupon_validation');
 
+// [direktt_cross_sell_user_tool] shortcode implementation
+add_shortcode('direktt_cross_sell_user_tool', 'direktt_cross_sell_user_tool');
+
+// handle api for issue coupon
+add_action( 'direktt/action/issue_coupon', 'direktt_cross_sell_on_issue_coupon' );
+
 function direktt_cross_sell_activation_check()
 {
     if (!function_exists('is_plugin_active')) {
@@ -380,6 +386,21 @@ function direktt_cross_sell_partners_add_custom_box()
     );
 }
 
+function direktt_cross_sell_get_partners_coupon_groups($post_id)
+{
+    $coupon_groups = direktt_cross_sell_get_coupon_groups();
+    $partners_coupon_groups = array();
+    foreach ( $coupon_groups as $group ) {
+        if ( $post_id === intval(get_post_meta($group['value'], 'direktt_cross_sell_partner_for_coupon_group', true)) ) {
+            $partners_coupon_groups[] = array(
+                'value' => $group['value'],
+                'title' => $group['title']
+            );
+        }
+    }
+    return $partners_coupon_groups;
+}
+
 function direktt_cross_sell_partners_render_custom_box($post)
 {
     $all_categories = Direktt_User::get_all_user_categories();
@@ -388,18 +409,11 @@ function direktt_cross_sell_partners_render_custom_box($post)
     $partner_categories = get_post_meta($post->ID, 'direktt_cross_sell_partner_categories', true);
     $partner_tags = get_post_meta($post->ID, 'direktt_cross_sell_partner_tags', true);
 
-    $coupon_groups = direktt_cross_sell_get_coupon_groups();
-    $partners_coupon_groups = array();
-    foreach ( $coupon_groups as $group ) {
-        if ( $post->ID === intval(get_post_meta($group['value'], 'direktt_cross_sell_partner_for_coupon_group', true)) ) {
-            $partners_coupon_groups[] = array(
-                'value' => $group['value'],
-                'title' => $group['title']
-            );
-        }
-    }
+    $partners_coupon_groups = direktt_cross_sell_get_partners_coupon_groups($post->ID);
 
-    $partners = direktt_cross_sell_get_all_partners();
+    $partners = array_filter(direktt_cross_sell_get_all_partners(), function ($partner) use ($post) {
+        return $partner['ID'] !== $post->ID;
+    });
     $partner_ids_for_who_can_edit = get_post_meta($post->ID, 'direktt_cross_sell_partners_for_who_can_edit', false);
 
     $qr_code_image = get_post_meta($post->ID, 'direktt_cross_sell_qr_code_image', true);
@@ -1359,24 +1373,24 @@ function direktt_cross_sell_get_partners()
     $partners = [];
     foreach ($posts as $post) {
         // Get associated coupon group IDs
-        $coupon_group_ids = get_post_meta($post->ID, 'direktt_cross_sell_coupon_groups', false);
+        $coupon_group_ids = direktt_cross_sell_get_partners_coupon_groups($post->ID);
         if (empty($coupon_group_ids)) continue;
 
         // Query attached coupon groups, filter to published, not fully issued
         $eligible_groups = [];
-        foreach ($coupon_group_ids as $group_id) {
+        foreach ($coupon_group_ids as $index => $group) {
             // Get max issuance
-            $max_issuance = get_post_meta($group_id, 'direktt_cross_sell_max_issuance', true);
+            $max_issuance = get_post_meta($group['value'], 'direktt_cross_sell_max_issuance', true);
             $max_issuance = (string)$max_issuance === '' ? 0 : intval($max_issuance); // default to 0 (unlimited)
 
             // If limit, get count of valid issued for this group
             if ($max_issuance > 0) {
-                $issued_count = direktt_cross_sell_get_issue_count($group_id, $post->ID);
+                $issued_count = direktt_cross_sell_get_issue_count($group['value'], $post->ID);
                 // Omit group if fully issued
                 if ($issued_count >= $max_issuance) continue;
             }
             // At this point: it's eligible
-            $eligible_groups[] = $group_id;
+            $eligible_groups[] = $group['value'];
         }
 
         // Only keep partners with at least one issuable group
@@ -1394,20 +1408,20 @@ function direktt_cross_sell_get_partner_coupon_groups($partner_id)
 {
     global $wpdb;
 
-    $coupon_group_ids = get_post_meta($partner_id, 'direktt_cross_sell_coupon_groups', false);
+    $coupon_group_ids = direktt_cross_sell_get_partners_coupon_groups($partner_id);
     if (empty($coupon_group_ids)) return [];
     $eligible_group_ids = [];
-    foreach ($coupon_group_ids as $gid) {
+    foreach ($coupon_group_ids as $index => $group) {
         // Max issuance filter
-        $max_issuance = get_post_meta($gid, 'direktt_cross_sell_max_issuance', true);
+        $max_issuance = get_post_meta($group['value'], 'direktt_cross_sell_max_issuance', true);
         $max_issuance = (string)$max_issuance === '' ? 0 : intval($max_issuance);
 
-        $issued_count = direktt_cross_sell_get_issue_count($gid, $partner_id);
+        $issued_count = direktt_cross_sell_get_issue_count($group['value'], $partner_id);
 
         if ($max_issuance > 0 && $issued_count >= $max_issuance) {
             continue;
         } else {
-            $eligible_group_ids[] = $gid;
+            $eligible_group_ids[] = $group['value'];
         }
     }
     if (empty($eligible_group_ids)) return [];
@@ -2387,4 +2401,343 @@ function direktt_cross_sell_render_profile_tool()
     if (direktt_cross_sell_user_can_review() && !empty($subscription_id)) {
         direktt_cross_sell_render_issued($subscription_id);
     }
+}
+
+function direktt_cross_sell_user_tool() {
+    global $direktt_user;
+    global $wpdb;
+    $table = $wpdb->prefix . 'direktt_cross_sell_issued';
+    $now = current_time('mysql');
+    if ( ! $direktt_user ) {
+        return esc_html__( 'You must be logged in to view your coupons.', 'direktt-cross-sell' );
+    }
+    $subscription_id = $direktt_user['direktt_user_id'];
+
+    if (isset($_GET['direktt_action']) && $_GET['direktt_action'] === 'my_coupons') {
+        ob_start();
+        echo '<a href="' . esc_url( remove_query_arg( 'direktt_action' ) ) . '">' . esc_html__( 'Back to main', 'direktt-cross-sell' ) . '</a>';
+        echo direktt_cross_sell_my_coupons();
+        return ob_get_clean();
+    }
+
+    if (isset($_GET['direktt_action']) && $_GET['direktt_action'] === 'view_coupon' && isset($_GET['coupon_id'])) {
+        $coupons = $wpdb->get_results($wpdb->prepare("
+        SELECT * FROM $table
+        WHERE ID = %d
+      AND direktt_receiver_user_id = %s
+      AND coupon_valid = 1
+", intval($_GET['coupon_id']), $subscription_id));
+
+        if (empty($coupons)) {
+            ob_start();
+            echo '<p>' . esc_html__('Coupon not found or you do not have permission to view it.', 'direktt-cross-sell') . '</p>';
+            return ob_get_clean();
+        }
+
+        $coupon = $coupons[0];
+
+        ob_start();
+
+        $qr_code_image = get_post_meta(intval($coupon->partner_id), 'direktt_cross_sell_qr_code_image', true);
+        $qr_code_color = get_post_meta(intval($coupon->partner_id), 'direktt_cross_sell_qr_code_color', true);
+        $qr_code_bg_color = get_post_meta(intval($coupon->partner_id), 'direktt_cross_sell_qr_code_bg_color', true);
+
+        $back_url = remove_query_arg(['coupon_id']);
+        $back_url = add_query_arg( 'direktt_action', 'my_coupons', $back_url );
+        echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back to My Coupons', 'direktt-cross-sell') . '</a>';
+
+        $check_slug = get_option('direktt_cross_sell_check_slug');
+        $validation_url = site_url($check_slug, 'https');
+
+        $actionObject = json_encode(
+            array(
+                "action" => array(
+                    "type" => "link",
+                    "params" => array(
+                        "url" => $validation_url,
+                        "target" => "app"
+                    ),
+                    "retVars" => array(
+                        "coupon_code" => $coupon->coupon_guid
+                    )
+                )
+            )
+        );
+
+        global $enqueue_direktt_cross_sell_scripts;
+        $enqueue_direktt_cross_sell_scripts = true;
+
+        ?>
+
+        <div id="canvas"></div>
+        <script type="text/javascript">
+            const qrCode = new QRCodeStyling({
+                width: 350,
+                height: 350,
+                type: "svg",
+                data: '<?php echo $actionObject ?>',
+                image: '<?php echo $qr_code_image ? esc_js($qr_code_image) : ''; ?>',
+                dotsOptions: {
+                    color: '<?php echo $qr_code_color ? esc_js($qr_code_color) : '#000000'; ?>',
+                    type: "rounded"
+                },
+                backgroundOptions: {
+                    color: '<?php echo $qr_code_bg_color ? esc_js($qr_code_bg_color) : '#ffffff'; ?>',
+                },
+                imageOptions: {
+                    crossOrigin: "anonymous",
+                    margin: 20
+                }
+            });
+
+            qrCode.append(document.getElementById("canvas"));
+            /* qrCode.download({
+                name: "qr",
+                extension: "svg"
+            });*/
+        </script>
+
+    <?php
+
+        return ob_get_clean();
+    }
+
+    if (isset($_GET['direktt_action']) && $_GET['direktt_action'] === 'available_to_issue') {
+        ob_start();
+        echo '<a href="' . esc_url( remove_query_arg( 'direktt_action' ) ) . '">' . esc_html__( 'Back to main', 'direktt-cross-sell' ) . '</a>';
+        $partners = direktt_cross_sell_get_partners();
+        
+        echo '<h2>' . esc_html__('Issue New Coupons', 'direktt-cross-sell') . '</h2>';
+        
+        if (empty($partners)) {
+            echo '<p>' . esc_html__('No Partners with Coupons Found.', 'direktt-cross-sell') . '</p>';
+        } else {
+            $eligible_partners = array();
+            $category_ids = Direktt_User::get_user_categories($direktt_user['ID']);
+            $tag_ids = Direktt_User::get_user_tags($direktt_user['ID']);
+            foreach($partners as $partner) {
+                $allowed_categories = intval(get_post_meta(intval($partner['ID']), 'direktt_cross_sell_partner_categories', true));
+                $allowed_tags = intval(get_post_meta(intval($partner['ID']), 'direktt_cross_sell_partner_tags', true));
+                $has_allowed_category = false;
+                $has_allowed_tag = false;
+                if ($allowed_categories !== 0 && in_array($allowed_categories, $category_ids)) {
+                    $has_allowed_category = true;
+                }
+                if ($allowed_tags !== 0 && in_array($allowed_tags, $tag_ids)) {
+                    $has_allowed_tag = true;
+                }
+                if ($has_allowed_category || $has_allowed_tag || Direktt_User::is_direktt_admin()) {
+                    $eligible_partners[] = $partner;
+                }
+            }
+
+            if (empty($eligible_partners)) {
+                echo '<p>' . esc_html__('No Partners with Coupons Found.', 'direktt-cross-sell') . '</p>';
+            } else {
+                echo '<ul>';
+
+                foreach ($eligible_partners as $eligible_partner) {
+                    $url = add_query_arg([
+                        'direktt_partner_id' => intval($eligible_partner['ID']),
+                        'direktt_action' => 'view_partner_coupons'
+                    ]);
+                    echo '<li><a href="' . esc_url($url) . '">' . esc_html($eligible_partner['title']) . '</a></li>';
+                }
+                echo '</ul>';
+            }
+        }
+        return ob_get_clean();
+    }
+
+    if (isset($_GET['direktt_action']) && $_GET['direktt_action'] === 'view_partner_coupons' && isset($_GET['direktt_partner_id'])) {
+        ob_start();
+        $partner_id = intval($_GET['direktt_partner_id']);
+        if (
+            isset($_POST['direktt_cs_issue_coupon']) &&
+            isset($_POST['direktt_coupon_group_id']) &&
+            isset($_POST['direktt_cs_issue_coupon_nonce']) &&
+            wp_verify_nonce($_POST['direktt_cs_issue_coupon_nonce'], 'direktt_cs_issue_coupon_action')
+        ) {
+            $qr_code_image = get_post_meta(intval($partner_id), 'direktt_cross_sell_qr_code_image', true);
+            $qr_code_color = get_post_meta(intval($partner_id), 'direktt_cross_sell_qr_code_color', true);
+            $qr_code_bg_color = get_post_meta(intval($partner_id), 'direktt_cross_sell_qr_code_bg_color', true);
+
+            $back_url = remove_query_arg(['coupon_id', 'direktt_action']);
+            $back_url = add_query_arg( 'direktt_action', 'view_partner_coupons', $back_url );
+            echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back', 'direktt-cross-sell') . '</a>';
+
+            $actionObject = json_encode(
+                array(
+                    "action" => array(
+                        "type" => "api",
+                        "params" => array(
+                            "actionType" => "issue_coupon"
+                        ),
+                        "retVars" => array(
+                            "partner_id" => sanitize_text_field($partner_id),
+                            "coupon_group_id" => sanitize_text_field($_POST['direktt_coupon_group_id']),
+                            "issuer_id" => $subscription_id,
+                        )
+                    )
+                )
+            );
+
+            global $enqueue_direktt_cross_sell_scripts;
+            $enqueue_direktt_cross_sell_scripts = true;
+
+            ?>
+
+            <div id="canvas"></div>
+            <script type="text/javascript">
+                const qrCode = new QRCodeStyling({
+                    width: 350,
+                    height: 350,
+                    type: "svg",
+                    data: '<?php echo $actionObject ?>',
+                    image: '<?php echo $qr_code_image ? esc_js($qr_code_image) : ''; ?>',
+                    dotsOptions: {
+                        color: '<?php echo $qr_code_color ? esc_js($qr_code_color) : '#000000'; ?>',
+                        type: "rounded"
+                    },
+                    backgroundOptions: {
+                        color: '<?php echo $qr_code_bg_color ? esc_js($qr_code_bg_color) : '#ffffff'; ?>',
+                    },
+                    imageOptions: {
+                        crossOrigin: "anonymous",
+                        margin: 20
+                    }
+                });
+
+                qrCode.append(document.getElementById("canvas"));
+                /* qrCode.download({
+                    name: "qr",
+                    extension: "svg"
+                });*/
+            </script>
+            <?php
+            return ob_get_clean();
+        }
+
+        $partner = get_post($partner_id);
+        if (!$partner || $partner->post_type !== 'direkttcspartners') {
+            echo '<p>' . esc_html__('Invalid partner selected.', 'direktt-cross-sell') . '</p>';
+            $back_url = remove_query_arg(['direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag']);
+            echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
+            return;
+        }
+
+        echo '<h2>' . esc_html($partner->post_title) . '</h2>';
+
+        $groups = direktt_cross_sell_get_partner_coupon_groups($partner_id);
+
+        if (empty($groups)) {
+            echo '<p>' . esc_html__('No Coupon Groups for this partner.', 'direktt-cross-sell') . '</p>';
+        } else {
+            ?>
+            <ul>
+                <?php
+                foreach ($groups as $group) {
+                    $max_issue = intval(get_post_meta($group->ID, 'direktt_cross_sell_max_issuance', true));
+                    $issue_label = ($max_issue == 0)
+                        ? esc_html__('Unlimited', 'direktt-cross-sell')
+                        : $max_issue;
+                ?>
+                    <li>
+                        <?php echo esc_html($group->post_title); ?>
+                        <span>( Issued: <?php echo direktt_cross_sell_get_issue_count($group->ID, $partner_id); ?> / <?php echo $issue_label; ?> )</span>
+                        <form method="post" action="" style="display:inline;" class="direktt-cs-issue-form">
+                            <input type="hidden" name="direktt_coupon_group_id" value="<?php echo esc_attr($group->ID); ?>">
+                            <input type="hidden" name="direktt_cs_issue_coupon_nonce" value="<?php echo esc_attr(wp_create_nonce('direktt_cs_issue_coupon_action')); ?>">
+                            <input type="submit" name="direktt_cs_issue_coupon" class="button button-primary" value="<?php echo esc_attr__('Issue', 'direktt-cross-sell'); ?>">
+                        </form>
+                    </li>
+                <?php
+                }
+                ?>
+            </ul>
+        <?php
+        }
+        $url = remove_query_arg(['coupon_id', 'direktt_partner_id', 'direktt_action']);
+        $url = add_query_arg( 'direktt_action', 'available_to_issue', $url );
+        echo '<a href="' . esc_url($url) . '">' . esc_html__('Back to Available to Issue', 'direktt-cross-sell') . '</a>';
+        return ob_get_clean();
+    }
+    
+    ob_start();
+    echo '<a href="' . esc_url( add_query_arg( 'direktt_action', 'my_coupons' ) ) . '">' . esc_html__( 'My Coupons', 'direktt-cross-sell' ) . '</a>';
+    echo '<br>';
+    echo '<a href="' . esc_url( add_query_arg( 'direktt_action', 'available_to_issue' ) ) . '">' . esc_html__( 'Available to Issue', 'direktt-cross-sell' ) . '</a>';
+    return ob_get_clean();
+}
+
+function direktt_cross_sell_on_issue_coupon($request) {
+    global $direktt_user;
+    $direktt_receiver_user_id = $direktt_user['direktt_user_id'] ?? '';
+    $coupon_group_id = intval($request['coupon_group_id'] ?? 0);
+    $partner_id = intval($request['partner_id'] ?? 0);
+    $issuer_id = sanitize_text_field($request['issuer_id'] ?? '');
+
+    global $wpdb;
+
+    $issued = false;
+
+    // Get coupon group properties
+    $group_validity = get_post_meta($coupon_group_id, 'direktt_cross_sell_group_validity', true);   // days (0 = no expiry)
+
+    $table = $wpdb->prefix . 'direktt_cross_sell_issued';
+
+    if (!empty($direktt_receiver_user_id) && !empty($coupon_group_id) && !empty($partner_id) && !empty($issuer_id)) {
+
+        // coupon logic (old code, as before)
+        $coupon_expires = null;
+        if (!empty($group_validity) && intval($group_validity) > 0) {
+            $now = current_time('mysql');
+            $coupon_expires = date('Y-m-d H:i:s', strtotime($now . ' + ' . intval($group_validity) . ' days'));
+        }
+
+        $max_issuance = get_post_meta(intval($coupon_group_id), 'direktt_cross_sell_max_issuance', true);
+        $max_issuance = (string)$max_issuance === '' ? 0 : intval($max_issuance);
+
+        $table = $wpdb->prefix . 'direktt_cross_sell_issued';
+        $issued_count = direktt_cross_sell_get_issue_count($coupon_group_id, $partner_id);
+
+        if ($max_issuance != 0 && $issued_count >= $max_issuance) {
+            $issued = 3;
+        } else {
+
+            $coupon_guid = wp_generate_uuid4();
+
+            $inserted = $wpdb->insert(
+                $table,
+                [
+                    'partner_id'               => $partner_id,
+                    'coupon_group_id'          => $coupon_group_id,
+                    'direktt_issuer_user_id'   => $direktt_user['direktt_user_id'],
+                    'direktt_receiver_user_id' => $direktt_receiver_user_id,
+                    'coupon_expires'           => $coupon_expires,
+                    'coupon_guid'              => $coupon_guid,
+                    // coupon_time: DB default
+                ],
+                [
+                    '%d', // partner_id
+                    '%d', // group_id
+                    '%s', // issuer
+                    '%s', // receiver
+                    is_null($coupon_expires) ? 'NULL' : '%s',
+                    '%s'  // guid
+                ]
+            );
+            if ((bool) $inserted) {
+                $issued = 1;
+                //TODO Send Issuance messages
+            } else {
+                $issued = 2;
+            }
+        }
+    }
+
+    $data = array(
+        'message' => __( 'Coupon issued successfully.', 'direktt-cross-sell' ),
+    );
+    wp_send_json_success($data, 200);
 }
