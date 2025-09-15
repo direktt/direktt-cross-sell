@@ -389,6 +389,18 @@ function direktt_cross_sell_partners_render_custom_box($post)
     $partner_tags = get_post_meta($post->ID, 'direktt_cross_sell_partner_tags', true);
 
     $coupon_groups = direktt_cross_sell_get_coupon_groups();
+    $partners_coupon_groups = array();
+    foreach ( $coupon_groups as $group ) {
+        if ( $post->ID === intval(get_post_meta($group['value'], 'direktt_cross_sell_partner_for_coupon_group', true)) ) {
+            $partners_coupon_groups[] = array(
+                'value' => $group['value'],
+                'title' => $group['title']
+            );
+        }
+    }
+
+    $partners = direktt_cross_sell_get_all_partners();
+    $partner_ids_for_who_can_edit = get_post_meta($post->ID, 'direktt_cross_sell_partners_for_who_can_edit', false);
 
     $qr_code_image = get_post_meta($post->ID, 'direktt_cross_sell_qr_code_image', true);
     $qr_code_color = get_post_meta($post->ID, 'direktt_cross_sell_qr_code_color', true);
@@ -398,11 +410,77 @@ function direktt_cross_sell_partners_render_custom_box($post)
 ?>
 
     <script>
-        var allCouponGroups = <?php echo json_encode($coupon_groups); ?>;
-        var couponGroups = <?php echo json_encode(get_post_meta($post->ID, 'direktt_cross_sell_coupon_groups', false)); ?>;
+        var allPartners = <?php echo json_encode($partners); ?>;
+        var partners = <?php echo json_encode($partner_ids_for_who_can_edit); ?>;
     </script>
 
     <table class="form-table">
+        <tr>
+            <th scope="row"><label for="direktt_cross_sell_partners_coupon_groups">Coupon Groups</label></th>
+            <td>
+                <?php if (count($partners_coupon_groups) > 0): ?>
+                    <ul>
+                        <?php foreach ($partners_coupon_groups as $group): ?>
+                            <li><?php echo esc_html($group['title']); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <p>No coupon groups assigned to this partner.</p>
+                <?php endif; ?>
+                <p class="description">These are the coupon groups assigned to this partner.</p>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row">Partners for who can edit</th>
+            <td>
+                <div id="direktt_cross_sell_partners_repeater">
+                    <!-- JS will render fields here -->
+                </div>
+                <button type="button" class="button" id="add_partner">Add Partner</button>
+                <script>
+                    (function($) {
+                        function renderGroup(index, value) {
+                            var options = '<option value="0">Select Partner Group</option>';
+                            allPartners.forEach(function(p) {
+                                var selected = (p.ID == value) ? 'selected' : '';
+                                options += `<option value="${p.ID}" ${selected}>${p.title}</option>`;
+                            });
+                            return `
+                        <div class="partner" style="margin-bottom:8px;">
+                            <label>
+                                <select name="direktt_cross_sell_partners_for_who_can_edit[]" class="direktt_partner_select">
+                                    ${options}
+                                </select>
+                            </label>
+                            <button type="button" class="button remove_partner">Remove</button>
+                        </div>`;
+                        }
+
+                        function refreshPartners() {
+                            var html = '';
+                            if (partners.length) {
+                                for (var i = 0; i < partners.length; i++) {
+                                    html += renderGroup(i, partners[i]);
+                                }
+                            }
+                            $('#direktt_cross_sell_partners_repeater').html(html);
+                        }
+                        $(document).ready(function() {
+                            refreshPartners();
+                            $('#add_partner').on('click', function(e) {
+                                e.preventDefault();
+                                $('#direktt_cross_sell_partners_repeater').append(renderGroup('', '0'));
+                            });
+                            $('#direktt_cross_sell_partners_repeater').on('click', '.remove_partner', function(e) {
+                                e.preventDefault();
+                                $(this).closest('.partner').remove();
+                            });
+                        });
+                    })(jQuery);
+                </script>
+                <p class="description">Add partners which this partner will be available to edit.</p>
+            </td>
+        </tr>
         <tr>
             <th scope="row"><label for="direktt_cross_sell_partner_categories">Partner Categories</label></th>
             <td>
@@ -429,57 +507,6 @@ function direktt_cross_sell_partners_render_custom_box($post)
                     <?php endforeach; ?>
                 </select>
                 <p class="description">Partner users with this tag will be able to validate coupons.</p>
-            </td>
-        </tr>
-        <tr>
-            <th scope="row">Coupon Groups</th>
-            <td>
-                <div id="direktt_cross_sell_coupon_groups_repeater">
-                    <!-- JS will render fields here -->
-                </div>
-                <button type="button" class="button" id="add_coupon_group">Add Coupon Group</button>
-                <script>
-                    (function($) {
-                        function renderGroup(index, value) {
-                            var options = '<option value="0">Select Coupon Group</option>';
-                            allCouponGroups.forEach(function(cs) {
-                                var selected = (cs.value == value) ? 'selected' : '';
-                                options += `<option value="${cs.value}" ${selected}>${cs.title}</option>`;
-                            });
-                            return `
-                        <div class="coupon-group" style="margin-bottom:8px;">
-                            <label>
-                                <select name="direktt_cross_sell_coupon_groups[]" class="direktt_coupon_group_select">
-                                    ${options}
-                                </select>
-                            </label>
-                            <button type="button" class="button remove_coupon_group">Remove</button>
-                        </div>`;
-                        }
-
-                        function refreshGroups() {
-                            var html = '';
-                            if (couponGroups.length) {
-                                for (var i = 0; i < couponGroups.length; i++) {
-                                    html += renderGroup(i, couponGroups[i]);
-                                }
-                            }
-                            $('#direktt_cross_sell_coupon_groups_repeater').html(html);
-                        }
-                        $(document).ready(function() {
-                            refreshGroups();
-                            $('#add_coupon_group').on('click', function(e) {
-                                e.preventDefault();
-                                $('#direktt_cross_sell_coupon_groups_repeater').append(renderGroup('', '0'));
-                            });
-                            $('#direktt_cross_sell_coupon_groups_repeater').on('click', '.remove_coupon_group', function(e) {
-                                e.preventDefault();
-                                $(this).closest('.coupon-group').remove();
-                            });
-                        });
-                    })(jQuery);
-                </script>
-                <p class="description">Add coupon groups for this partner.</p>
             </td>
         </tr>
         <tr>
@@ -1013,21 +1040,21 @@ function save_direktt_cross_sell_partner_meta($post_id)
 
     if (!isset($_POST['direktt_cross_sell_nonce']) || !wp_verify_nonce($_POST['direktt_cross_sell_nonce'], 'direktt_cross_sell_save')) return;
 
-    if (isset($_POST['direktt_cross_sell_coupon_groups']) && is_array($_POST['direktt_cross_sell_coupon_groups'])) {
+    if (isset($_POST['direktt_cross_sell_partners_for_who_can_edit']) && is_array($_POST['direktt_cross_sell_partners_for_who_can_edit'])) {
 
-        $groups = array_map('sanitize_text_field', $_POST['direktt_cross_sell_coupon_groups']);
+        $groups = array_map('sanitize_text_field', $_POST['direktt_cross_sell_partners_for_who_can_edit']);
         $groups = array_filter($groups, function ($group) {
             return !empty($group) && $group !== '0';
         });
 
         $groups = array_unique($groups);
 
-        delete_post_meta($post_id, 'direktt_cross_sell_coupon_groups');
+        delete_post_meta($post_id, 'direktt_cross_sell_partners_for_who_can_edit');
         foreach ($groups as $group) {
-            add_post_meta($post_id, 'direktt_cross_sell_coupon_groups', $group);
+            add_post_meta($post_id, 'direktt_cross_sell_partners_for_who_can_edit', $group);
         }
     } else {
-        delete_post_meta($post_id, 'direktt_cross_sell_coupon_groups');
+        delete_post_meta($post_id, 'direktt_cross_sell_partners_for_who_can_edit');
     }
 
     if (isset($_POST['direktt_cross_sell_partner_categories'])) {
@@ -1119,10 +1146,27 @@ function direktt_cross_sell_coupon_groups_render_custom_box($post)
     $group_template = get_post_meta($post->ID, 'direktt_cross_sell_group_template', true);
     $qr_code_message = get_post_meta($post->ID, 'direktt_cross_sell_qr_code_message', true);
 
+    $partners = direktt_cross_sell_get_all_partners();
+    $selected_partner = get_post_meta($post->ID, 'direktt_cross_sell_partner_for_coupon_group', true);
+
     wp_nonce_field('direktt_cross_sell_save', 'direktt_cross_sell_nonce');
 ?>
 
     <table class="form-table">
+        <tr>
+            <th scope="row"><label for="direktt_cross_sell_partner_for_coupon_group">Partner</label></th>
+            <td>
+                <select name="direktt_cross_sell_partner_for_coupon_group" id="direktt_cross_sell_partner_for_coupon_group">
+                    <option value="0">Select Partner</option>
+                    <?php foreach ($partners as $partner): ?>
+                        <option value="<?php echo esc_attr($partner['ID']); ?>" <?php selected($selected_partner, $partner['ID']); ?>>
+                            <?php echo esc_html($partner['title']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description">Partner to whom this Coupon Group belongs. Only this partner will be able to issue coupons from this group.</p>
+            </td>
+        </tr>
         <tr>
             <th scope="row"><label for="direktt_cross_sell_group_validity">Coupon Validity</label></th>
             <td>
@@ -1169,6 +1213,14 @@ function save_direktt_cross_sell_coupon_groups_meta($post_id)
     if (!isset($_POST['post_type']) || $_POST['post_type'] !== 'direkttcscoupon') return;
 
     if (!isset($_POST['direktt_cross_sell_nonce']) || !wp_verify_nonce($_POST['direktt_cross_sell_nonce'], 'direktt_cross_sell_save')) return;
+
+    if (isset($_POST['direktt_cross_sell_partner_for_coupon_group'])) {
+        update_post_meta(
+            $post_id,
+            'direktt_cross_sell_partner_for_coupon_group',
+            sanitize_text_field($_POST['direktt_cross_sell_partner_for_coupon_group'])
+        );
+    }
 
     if (isset($_POST['direktt_cross_sell_group_validity'])) {
         update_post_meta(
