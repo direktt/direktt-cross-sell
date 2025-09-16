@@ -557,6 +557,7 @@ function direktt_cross_sell_partners_render_custom_box($post)
                             mediaUploader.on('select', function() {
                                 var attachment = mediaUploader.state().get('selection').first().toJSON();
                                 $('#direktt_cross_sell_qr_code_image').val(attachment.url);
+                                $('#direktt_cross_sell_qr_code_image').trigger('change');
                             });
 
                             // Open the uploader dialog
