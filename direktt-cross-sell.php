@@ -424,7 +424,7 @@ function direktt_cross_sell_partners_render_custom_box($post)
 ?>
 
     <script>
-        var allPartners = <?php echo json_encode($partners); ?>;
+        var allPartners = <?php echo json_encode(array_values($partners)); ?>;
         var partners = <?php echo json_encode($partner_ids_for_who_can_edit); ?>;
     </script>
 
@@ -455,10 +455,12 @@ function direktt_cross_sell_partners_render_custom_box($post)
                     (function($) {
                         function renderGroup(index, value) {
                             var options = '<option value="0">Select Partner Group</option>';
-                            allPartners.forEach(function(p) {
-                                var selected = (p.ID == value) ? 'selected' : '';
-                                options += `<option value="${p.ID}" ${selected}>${p.title}</option>`;
-                            });
+                            if (allPartners.length) {
+                                allPartners.forEach(function(p) {
+                                    var selected = (p.ID == value) ? 'selected' : '';
+                                    options += `<option value="${p.ID}" ${selected}>${p.title}</option>`;
+                                });
+                            }
                             return `
                         <div class="partner" style="margin-bottom:8px;">
                             <label>
