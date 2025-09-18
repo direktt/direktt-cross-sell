@@ -2668,23 +2668,60 @@ function direktt_cross_sell_user_tool() {
     $eligible_partners = array();
     $category_ids = Direktt_User::get_user_categories($direktt_user['ID']);
     $tag_ids = Direktt_User::get_user_tags($direktt_user['ID']);
-    foreach($partners as $partner) {
-        $allowed_categories = intval(get_post_meta(intval($partner['ID']), 'direktt_cross_sell_partner_categories', true));
-        $allowed_tags = intval(get_post_meta(intval($partner['ID']), 'direktt_cross_sell_partner_tags', true));
-        $has_allowed_category = false;
-        $has_allowed_tag = false;
-        if ($allowed_categories !== 0 && in_array($allowed_categories, $category_ids)) {
-            $has_allowed_category = true;
-        }
-        if ($allowed_tags !== 0 && in_array($allowed_tags, $tag_ids)) {
-            $has_allowed_tag = true;
-        }
-        if ($has_allowed_category || $has_allowed_tag || Direktt_User::is_direktt_admin()) {
-            $eligible_partners[] = $partner;
+    if ( Direktt_User::is_direktt_admin() ) {
+        $eligible_partners = $partners;
+    } else {
+        $meta_query = array(
+            'relation' => 'OR',
+            array(
+                'key' => 'direktt_cross_sell_partner_categories',
+                'value' => $category_ids,
+                'compare' => 'IN',
+            ),
+            array(
+                'key' => 'direktt_cross_sell_partner_tags',
+                'value' => $tag_ids,
+                'compare' => 'IN',
+            ),
+        );
+
+        $args = array(
+            'post_type' => 'direkttcspartners',
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'meta_query' => $meta_query,
+        );
+
+        $partners_with_cat_tag = get_posts($args);
+        if ( ! empty( $partners_with_cat_tag ) ) {
+            foreach($partners_with_cat_tag as $partner) {
+                // uzeti kats i tags od trenutnog usera
+                // pogledati da li postoji partner sa tim kats i tags izabranim
+                // u eligible partners se dodaje taj partner koji ima kats i tags + svi iz njegove liste partners for who can edit
+                $eligible_partners[] = array(
+                    'ID' => $partner->ID,
+                    'title' => $partner->post_title,
+                );
+
+                // Dodati sve partnere iz liste "partners for who can edit"
+                $partners_for_edit = get_post_meta($partner->ID, 'direktt_cross_sell_partners_for_who_can_edit', true);
+                if (!empty($partners_for_edit)) {
+                    foreach($partners_for_edit as $edit_partner_id) {
+                        $edit_partner = get_post($edit_partner_id);
+                        if ($edit_partner) {
+                            $eligible_partners[] = array(
+                                'ID' => $edit_partner->ID,
+                                'title' => $edit_partner->post_title,
+                            );
+                        }
+                    }
+                }
+            }
         }
     }
     
     if (!empty($eligible_partners)) {
+        $eligible_partners = array_unique($eligible_partners, SORT_REGULAR);
         echo '<h2>' . esc_html__('Issue New Coupons', 'direktt-cross-sell') . '</h2>';
         echo '<ul>';
 
