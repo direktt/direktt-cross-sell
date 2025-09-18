@@ -2739,6 +2739,10 @@ function direktt_cross_sell_user_tool() {
         echo '<ul>';
 
         foreach ($eligible_partners as $eligible_partner) {
+            $coupons = direktt_cross_sell_get_partner_coupon_groups($eligible_partner['ID']);
+            if (empty($coupons)) {
+                continue;
+            }
             $url = add_query_arg([
                 'direktt_partner_id' => intval($eligible_partner['ID']),
                 'direktt_action' => 'view_partner_coupons'
