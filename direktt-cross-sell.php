@@ -2671,28 +2671,37 @@ function direktt_cross_sell_user_tool() {
     if ( Direktt_User::is_direktt_admin() ) {
         $eligible_partners = $partners;
     } else {
-        $meta_query = array(
-            'relation' => 'OR',
-            array(
-                'key' => 'direktt_cross_sell_partner_categories',
-                'value' => $category_ids,
-                'compare' => 'IN',
-            ),
-            array(
-                'key' => 'direktt_cross_sell_partner_tags',
-                'value' => $tag_ids,
-                'compare' => 'IN',
-            ),
-        );
+        if (empty($category_ids) && empty($tag_ids)) {
+            $partners_with_cat_tag = [];
+        } else {
+            $meta_query = ['relation' => 'OR'];
 
-        $args = array(
-            'post_type' => 'direkttcspartners',
-            'post_status' => 'publish',
-            'posts_per_page' => -1,
-            'meta_query' => $meta_query,
-        );
+            if (!empty($category_ids)) {
+                $meta_query[] = [
+                    'key'     => 'direktt_cross_sell_partner_categories',
+                    'value'   => $category_ids,
+                    'compare' => 'IN',
+                ];
+            }
 
-        $partners_with_cat_tag = get_posts($args);
+            if (!empty($tag_ids)) {
+                $meta_query[] = [
+                    'key'     => 'direktt_cross_sell_partner_tags',
+                    'value'   => $tag_ids,
+                    'compare' => 'IN',
+                ];
+            }
+
+            $args = [
+                'post_type'      => 'direkttcspartners',
+                'post_status'    => 'publish',
+                'posts_per_page' => -1,
+                'meta_query'     => $meta_query,
+            ];
+
+            $partners_with_cat_tag = get_posts($args);
+        }
+
         if ( ! empty( $partners_with_cat_tag ) ) {
             foreach($partners_with_cat_tag as $partner) {
                 // uzeti kats i tags od trenutnog usera
@@ -2704,11 +2713,8 @@ function direktt_cross_sell_user_tool() {
                 );
 
                 // Dodati sve partnere iz liste "partners for who can edit"
-                $partners_for_edit = get_post_meta($partner->ID, 'direktt_cross_sell_partners_for_who_can_edit', true);
+                $partners_for_edit = get_post_meta($partner->ID, 'direktt_cross_sell_partners_for_who_can_edit', false);
                 if (!empty($partners_for_edit)) {
-                    if (!is_array($partners_for_edit)) {
-                        $partners_for_edit = array($partners_for_edit);
-                    }
                     foreach($partners_for_edit as $edit_partner_id) {
                         $edit_partner = get_post($edit_partner_id);
                         if ($edit_partner) {
