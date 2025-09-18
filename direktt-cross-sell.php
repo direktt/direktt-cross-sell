@@ -2706,6 +2706,9 @@ function direktt_cross_sell_user_tool() {
                 // Dodati sve partnere iz liste "partners for who can edit"
                 $partners_for_edit = get_post_meta($partner->ID, 'direktt_cross_sell_partners_for_who_can_edit', true);
                 if (!empty($partners_for_edit)) {
+                    if (!is_array($partners_for_edit)) {
+                        $partners_for_edit = array($partners_for_edit);
+                    }
                     foreach($partners_for_edit as $edit_partner_id) {
                         $edit_partner = get_post($edit_partner_id);
                         if ($edit_partner) {
@@ -2721,7 +2724,11 @@ function direktt_cross_sell_user_tool() {
     }
     
     if (!empty($eligible_partners)) {
-        $eligible_partners = array_unique($eligible_partners, SORT_REGULAR);
+        if (!is_array($eligible_partners)) {
+            $eligible_partners = array($eligible_partners);
+        } else {
+            $eligible_partners = array_unique($eligible_partners, SORT_REGULAR);
+        }
         echo '<h2>' . esc_html__('Issue New Coupons', 'direktt-cross-sell') . '</h2>';
         echo '<ul>';
 
