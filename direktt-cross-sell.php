@@ -1659,6 +1659,7 @@ function direktt_cross_sell_render_use_coupon($use_coupon_id)
             </form>
             <script>
                 function direkttCSConfirmCouponUse(title) {
+                    return true; // TODO Disable confirmation for now
                     return window.confirm('<?php echo esc_js(__('Are you sure you want to use this coupon for: ', 'direktt-cross-sell')); ?>' + title + '?');
                 }
             </script>
@@ -1768,6 +1769,7 @@ function direktt_cross_sell_render_one_partner($partner_id)
         </ul>
         <script>
             function direkttCSConfirmIssue(title) {
+                return true; // TODO Disable confirmation for now
                 return window.confirm('<?php echo esc_js(__('Are you sure you want to issue a coupon for: ', 'direktt-cross-sell')); ?>' + title + '?');
             }
         </script>
@@ -1968,6 +1970,7 @@ function direktt_cross_sell_render_issued($subscription_id)
     ?>
     <script>
         function direkttCSConfirmInvalidate(title, issued) {
+            return true; // TODO Disable confirmation for now
             return window.confirm('<?php echo esc_js(__('Are you sure you want to invalidate this coupon for: ', 'direktt-cross-sell')); ?>' + title + ' (Issued: ' + issued + ')?');
         }
     </script>
@@ -2341,6 +2344,7 @@ function direktt_cross_sell_coupon_validation()
             </form>
             <script>
                 function direkttCSConfirmCouponUse(title) {
+                    return true; // TODO Disable confirmation for now
                     return window.confirm('<?php echo esc_js(__('Are you sure you want to use this coupon for: ', 'direktt-cross-sell')); ?>' + title + '?');
                 }
             </script>
