@@ -50,7 +50,10 @@ add_shortcode('direktt_cross_sell_coupon_validation', 'direktt_cross_sell_coupon
 add_shortcode('direktt_cross_sell_user_tool', 'direktt_cross_sell_user_tool');
 
 // handle api for issue coupon
-add_action( 'direktt/action/issue_coupon', 'direktt_cross_sell_on_issue_coupon' );
+add_action('direktt/action/issue_coupon', 'direktt_cross_sell_on_issue_coupon');
+
+//setup menus
+add_action('direktt_setup_admin_menu', 'direktt_cross_sell_setup_menu');
 
 function direktt_cross_sell_activation_check()
 {
@@ -77,6 +80,29 @@ function direktt_cross_sell_activation_check()
 
         deactivate_plugins(plugin_basename(__FILE__));
     }
+}
+
+function direktt_cross_sell_setup_menu()
+{
+    add_submenu_page(
+        'direktt-dashboard',
+        __('Cross-Sell Partners', 'direktt-cross-sell'),
+        __('Cross-Sell Partners', 'direktt-cross-sell'),
+        'edit_posts',
+        'edit.php?post_type=direkttcspartners',
+        null,
+        10
+    );
+
+    add_submenu_page(
+        'direktt-dashboard',
+        __('Cross-Sell Coupon Groups', 'direktt-cross-sell'),
+        __('Cross-Sell Coupon Groups', 'direktt-cross-sell'),
+        'edit_posts',
+        'edit.php?post_type=direkttcscoupon',
+        null,
+        11
+    );
 }
 
 function direktt_cross_sell_setup_settings_page()
@@ -282,10 +308,10 @@ function direktt_cross_sell_register_custom_post_types()
         'hierarchical'        => false,
         'public'              => false,
         'show_ui'             => true,
-        'show_in_menu'        => 'direktt-dashboard',
+        'show_in_menu'        => false,
         'show_in_nav_menus'   => true,
         'show_in_admin_bar'   => true,
-        'menu_position'       => 5,
+        'menu_position'       => 10,
         'can_export'          => true,
         'has_archive'         => false,
         'exclude_from_search' => false,
@@ -322,10 +348,10 @@ function direktt_cross_sell_register_custom_post_types()
         'hierarchical'        => false,
         'public'              => false,
         'show_ui'             => true,
-        'show_in_menu'        => 'direktt-dashboard',
+        'show_in_menu'        => false,
         'show_in_nav_menus'   => true,
         'show_in_admin_bar'   => true,
-        'menu_position'       => 5,
+        'menu_position'       => 11,
         'can_export'          => true,
         'has_archive'         => false,
         'exclude_from_search' => false,
@@ -387,8 +413,8 @@ function direktt_cross_sell_get_partners_coupon_groups($post_id)
 {
     $coupon_groups = direktt_cross_sell_get_coupon_groups();
     $partners_coupon_groups = array();
-    foreach ( $coupon_groups as $group ) {
-        if ( $post_id === intval(get_post_meta($group['value'], 'direktt_cross_sell_partner_for_coupon_group', true)) ) {
+    foreach ($coupon_groups as $group) {
+        if ($post_id === intval(get_post_meta($group['value'], 'direktt_cross_sell_partner_for_coupon_group', true))) {
             $partners_coupon_groups[] = array(
                 'value' => $group['value'],
                 'title' => $group['title']
@@ -653,7 +679,7 @@ function direktt_cross_sell_partners_render_custom_box($post)
                             newQrCode.append(document.getElementById("canvas"));
                         });
                         $('#direktt_cross_sell_qr_code_color').wpColorPicker({
-                            change: function (event, ui) {
+                            change: function(event, ui) {
                                 let color = ui.color.toString();
 
                                 var newQrCode = new QRCodeStyling({
@@ -679,8 +705,8 @@ function direktt_cross_sell_partners_render_custom_box($post)
                                 newQrCode.append(document.getElementById("canvas"));
                             }
                         });
-                         $('#direktt_cross_sell_qr_code_bg_color').wpColorPicker({
-                            change: function (event, ui) {
+                        $('#direktt_cross_sell_qr_code_bg_color').wpColorPicker({
+                            change: function(event, ui) {
                                 let color = ui.color.toString();
 
                                 var newQrCode = new QRCodeStyling({
@@ -1117,7 +1143,7 @@ function direktt_cross_sell_partners_enqueue_scripts($hook)
         wp_enqueue_script('wp-color-picker');
         wp_enqueue_script(
             'qr-code-styling', // Handle
-            plugin_dir_url( __FILE__ ). 'assets/js/qr-code-styling.js', // Source
+            plugin_dir_url(__FILE__) . 'assets/js/qr-code-styling.js', // Source
             array(), // Dependencies (none in this case)
             null,
         );
@@ -1130,7 +1156,7 @@ function direktt_cross_sell_enqueue_fe_scripts($hook)
     if ($enqueue_direktt_cross_sell_scripts) {
         wp_enqueue_script(
             'qr-code-styling', // Handle
-            plugin_dir_url( __FILE__ ). 'assets/js/qr-code-styling.js', // Source
+            plugin_dir_url(__FILE__) . 'assets/js/qr-code-styling.js', // Source
             array(), // Dependencies (none in this case)
             null,
         );
@@ -2036,7 +2062,7 @@ function direktt_cross_sell_my_coupons()
         global $enqueue_direktt_cross_sell_scripts;
         $enqueue_direktt_cross_sell_scripts = true;
 
-        ?>
+    ?>
 
         <div id="canvas"></div>
         <script type="text/javascript">
@@ -2066,7 +2092,7 @@ function direktt_cross_sell_my_coupons()
             });*/
         </script>
 
-    <?php
+        <?php
 
         return ob_get_clean();
     }
@@ -2418,13 +2444,14 @@ function direktt_cross_sell_render_profile_tool()
     }
 }
 
-function direktt_cross_sell_user_tool() {
+function direktt_cross_sell_user_tool()
+{
     global $direktt_user;
     global $wpdb;
     $table = $wpdb->prefix . 'direktt_cross_sell_issued';
     $now = current_time('mysql');
-    if ( ! $direktt_user ) {
-        return esc_html__( 'You must be logged in to view your coupons.', 'direktt-cross-sell' );
+    if (! $direktt_user) {
+        return esc_html__('You must be logged in to view your coupons.', 'direktt-cross-sell');
     }
     $subscription_id = $direktt_user['direktt_user_id'];
 
@@ -2451,7 +2478,7 @@ function direktt_cross_sell_user_tool() {
         $qr_code_bg_color = get_post_meta(intval($coupon->partner_id), 'direktt_cross_sell_qr_code_bg_color', true);
 
         $back_url = remove_query_arg(['coupon_id']);
-        $back_url = add_query_arg( 'direktt_action', 'my_coupons', $back_url );
+        $back_url = add_query_arg('direktt_action', 'my_coupons', $back_url);
         echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back', 'direktt-cross-sell') . '</a>';
 
         $check_slug = get_option('direktt_cross_sell_check_slug');
@@ -2505,7 +2532,7 @@ function direktt_cross_sell_user_tool() {
             });*/
         </script>
 
-    <?php
+        <?php
 
         return ob_get_clean();
     }
@@ -2525,7 +2552,7 @@ function direktt_cross_sell_user_tool() {
             $qr_code_message = get_post_meta(intval($_POST['direktt_coupon_group_id']), 'direktt_cross_sell_qr_code_message', true);
 
             $back_url = remove_query_arg(['coupon_id', 'direktt_action']);
-            $back_url = add_query_arg( 'direktt_action', 'view_partner_coupons', $back_url );
+            $back_url = add_query_arg('direktt_action', 'view_partner_coupons', $back_url);
             echo '<a href="' . esc_url($back_url) . '">' . esc_html__('Back', 'direktt-cross-sell') . '</a>';
 
             $actionObject = json_encode(
@@ -2547,7 +2574,7 @@ function direktt_cross_sell_user_tool() {
             global $enqueue_direktt_cross_sell_scripts;
             $enqueue_direktt_cross_sell_scripts = true;
 
-            ?>
+        ?>
 
             <div id="canvas"></div>
             <button id="share"><?php echo esc_html__('Share', 'direktt-cross-sell'); ?></button>
@@ -2618,7 +2645,7 @@ function direktt_cross_sell_user_tool() {
                 });
             </script>
             </script>
-            <?php
+        <?php
             return ob_get_clean();
         }
 
@@ -2637,7 +2664,7 @@ function direktt_cross_sell_user_tool() {
         if (empty($groups)) {
             echo '<p>' . esc_html__('No Coupon Groups for this partner.', 'direktt-cross-sell') . '</p>';
         } else {
-            ?>
+        ?>
             <ul>
                 <?php
                 foreach ($groups as $group) {
@@ -2659,20 +2686,20 @@ function direktt_cross_sell_user_tool() {
                 }
                 ?>
             </ul>
-        <?php
+<?php
         }
         $url = remove_query_arg(['coupon_id', 'direktt_partner_id', 'direktt_action']);
         echo '<a href="' . esc_url($url) . '">' . esc_html__('Back', 'direktt-cross-sell') . '</a>';
         return ob_get_clean();
     }
-    
+
     ob_start();
     echo direktt_cross_sell_my_coupons();
     $partners = direktt_cross_sell_get_partners();
     $eligible_partners = array();
     $category_ids = Direktt_User::get_user_categories($direktt_user['ID']);
     $tag_ids = Direktt_User::get_user_tags($direktt_user['ID']);
-    if ( Direktt_User::is_direktt_admin() ) {
+    if (Direktt_User::is_direktt_admin()) {
         $eligible_partners = $partners;
     } else {
         if (empty($category_ids) && empty($tag_ids)) {
@@ -2706,8 +2733,8 @@ function direktt_cross_sell_user_tool() {
             $partners_with_cat_tag = get_posts($args);
         }
 
-        if ( ! empty( $partners_with_cat_tag ) ) {
-            foreach($partners_with_cat_tag as $partner) {
+        if (! empty($partners_with_cat_tag)) {
+            foreach ($partners_with_cat_tag as $partner) {
                 // uzeti kats i tags od trenutnog usera
                 // pogledati da li postoji partner sa tim kats i tags izabranim
                 // u eligible partners se dodaje taj partner koji ima kats i tags + svi iz njegove liste partners for who can edit
@@ -2719,7 +2746,7 @@ function direktt_cross_sell_user_tool() {
                 // Dodati sve partnere iz liste "partners for who can edit"
                 $partners_for_edit = get_post_meta($partner->ID, 'direktt_cross_sell_partners_for_who_can_edit', false);
                 if (!empty($partners_for_edit)) {
-                    foreach($partners_for_edit as $edit_partner_id) {
+                    foreach ($partners_for_edit as $edit_partner_id) {
                         $edit_partner = get_post($edit_partner_id);
                         if ($edit_partner) {
                             $eligible_partners[] = array(
@@ -2732,7 +2759,7 @@ function direktt_cross_sell_user_tool() {
             }
         }
     }
-    
+
     if (!empty($eligible_partners)) {
         if (!is_array($eligible_partners)) {
             $eligible_partners = array($eligible_partners);
@@ -2758,7 +2785,8 @@ function direktt_cross_sell_user_tool() {
     return ob_get_clean();
 }
 
-function direktt_cross_sell_on_issue_coupon($request) {
+function direktt_cross_sell_on_issue_coupon($request)
+{
     global $direktt_user;
     $direktt_receiver_user_id = $direktt_user['direktt_user_id'] ?? '';
     $coupon_group_id = intval($request['coupon_group_id'] ?? 0);
@@ -2825,7 +2853,7 @@ function direktt_cross_sell_on_issue_coupon($request) {
     }
 
     $data = array(
-        'message' => __( 'Coupon issued successfully.', 'direktt-cross-sell' ),
+        'message' => __('Coupon issued successfully.', 'direktt-cross-sell'),
     );
     wp_send_json_success($data, 200);
 }
