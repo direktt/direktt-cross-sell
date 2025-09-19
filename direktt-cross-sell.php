@@ -135,7 +135,7 @@ function direktt_cross_sell_settings()
     ?>
     <div class="wrap">
         <?php if ($success): ?>
-            <div class="updated notice is-dismissible">
+            <div class="notice notice-success">
                 <p>Settings saved successfully.</p>
             </div>
         <?php endif; ?>
