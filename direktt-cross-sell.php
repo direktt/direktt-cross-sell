@@ -1962,9 +1962,11 @@ function direktt_cross_sell_render_issued($subscription_id)
     if (empty($filtered_coupon_results)) {
         echo '<p>' . esc_html__('No active or valid coupons issued to this user.', 'direktt-cross-sell') . '</p>';
     } else {
-        echo '<table class="direktt-cross-sell-issued-coupos-table" style="margin-top:16px;"><thead><tr>';
-        echo '<th>' . esc_html__('Name', 'direktt-cross-sell') . '</th>';
-        echo '<th>' . esc_html__('Group', 'direktt-cross-sell') . '</th>';
+        echo '<table class="direktt-cross-sell-issued-coupos-table"><thead><tr>';
+        echo '<th>';
+        echo '<strong>' . esc_html__('Partner', 'direktt-cross-sell') . '</strong>';
+        echo ' (' . esc_html__('Group', 'direktt-cross-sell') . ')';
+        echo '</th>';
         echo '<th>' . esc_html__('Issued', 'direktt-cross-sell') . '</th>';
         echo '<th>' . esc_html__('Expires', 'direktt-cross-sell') . '</th>';
         echo '<th>' . esc_html__('Used', 'direktt-cross-sell') . '</th>';
@@ -1986,8 +1988,10 @@ function direktt_cross_sell_render_issued($subscription_id)
             $used_count = direktt_cross_sell_get_used_count(intval($row->ID));
 
             echo '<tr>';
-				echo '<td class="direktt-cross-sell-name">' . $partner_name . '</td>';
-				echo '<td class="direktt-cross-sell-group">' . $group_title . '</td>';
+				echo '<td class="direktt-cross-sell-name">';
+				echo '<strong>' . $partner_name . '</strong>';
+				echo ' <br/><i>' . $group_title . '</i>';
+				echo '</td>';
 				echo '<td class="direktt-cross-sell-issued">' . human_time_diff( strtotime( $issued ) ) . ' ago</td>';
 				echo '<td class="direktt-cross-sell-expires">' . $expires . '</td>';
 				echo '<td class="direktt-cross-sell-count">' . $used_count . ' / ' . ($max_usage > 0 ? $max_usage : 'Unlimited') . '</td>';
@@ -2001,13 +2005,13 @@ function direktt_cross_sell_render_issued($subscription_id)
 						'direktt_action' => 'use_coupon',
 						'coupon_id' => intval($row->ID),
 					], remove_query_arg(['direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag']));
-					echo '<a class="button button-primary button-invert" href="' . esc_url($use_url) . '">' . esc_html__('Use', 'direktt-cross-sell') . '</a>';
+					echo '<a class="button button-primary" href="' . esc_url($use_url) . '">' . esc_html__('Use', 'direktt-cross-sell') . '</a>';
 				echo '</td>';
 				echo '<td colspan="3">';
 					echo '<form method="post" action="' . $invalidate_url . '" class="direktt-cross-sell-invalidate-form" onsubmit="return direkttCSConfirmInvalidate(\'' . esc_js($group_title) . '\', \'' . esc_js($issued) . '\');">';
 					echo '<input type="hidden" name="direktt_cs_invalidate_coupon_nonce" value="' . esc_attr(wp_create_nonce('direktt_cs_invalidate_coupon_action')) . '">';
 					echo '<input type="hidden" name="invalid_coupon_id" value="' . esc_attr($row->ID) . '">';
-					echo '<input type="submit" name="direktt_cs_invalidate_coupon" class="button button-secondary button-invert" value="' . esc_attr__('Invalidate', 'direktt-cross-sell') . '">';
+					echo '<input type="submit" name="direktt_cs_invalidate_coupon" class="button button-red button-invert" value="' . esc_attr__('Invalidate', 'direktt-cross-sell') . '">';
 					echo '</form>';
 				echo '</td>';
             echo '</tr>';
