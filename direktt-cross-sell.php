@@ -468,7 +468,7 @@ function direktt_cross_sell_partners_render_custom_box($post)
             </td>
         </tr>
         <tr>
-            <th scope="row">Partners for who can edit</th>
+            <th scope="row">Can issue coupons for:</th>
             <td>
                 <div id="direktt_cross_sell_partners_repeater">
                     <!-- JS will render fields here -->
@@ -517,7 +517,7 @@ function direktt_cross_sell_partners_render_custom_box($post)
                         });
                     })(jQuery);
                 </script>
-                <p class="description">Add partners which this partner will be available to edit.</p>
+                <p class="description">Select Partners for Which This Partner Can Issue Coupons.</p>
             </td>
         </tr>
         <tr>
@@ -549,11 +549,11 @@ function direktt_cross_sell_partners_render_custom_box($post)
             </td>
         </tr>
         <tr>
-            <th scope="row"><label for="direktt_cross_sell_qr_code_image">QR Code Image</label></th>
+            <th scope="row"><label for="direktt_cross_sell_qr_code_image">QR Code Logo</label></th>
             <td>
                 <input type="text" id="direktt_cross_sell_qr_code_image" name="direktt_cross_sell_qr_code_image" value="<?php echo esc_attr($qr_code_image ?? ''); ?>" />
                 <input type="button" id="direktt_cross_sell_qr_code_image_button" class="button" value="Choose Image" />
-                <p class="description">TODO Promeniti ovaj tekst: This image will be in center of the QR Code.</p>
+                <p class="description">Optional Logo/Image to Display at Center of QR Code</p>
                 <script>
                     jQuery(document).ready(function($) {
                         var mediaUploader;
@@ -594,7 +594,7 @@ function direktt_cross_sell_partners_render_custom_box($post)
             <th scope="row"><label for="direktt_cross_sell_qr_code_color">QR Code Color</label></th>
             <td>
                 <input type="text" id="direktt_cross_sell_qr_code_color" name="direktt_cross_sell_qr_code_color" value="<?php echo esc_attr($qr_code_color ?? '#000000'); ?>" />
-                <p class="description">TODO Promeniti ovaj tekst: This color will be the color of the dots in the QR Code.</p>
+                <p class="description">Optional Color of Dots in the QR Code</p>
                 <script>
                     jQuery(document).ready(function($) {
                         $('#direktt_cross_sell_qr_code_color').wpColorPicker();
@@ -606,7 +606,7 @@ function direktt_cross_sell_partners_render_custom_box($post)
             <th scope="row"><label for="direktt_cross_sell_qr_code_bg_color">QR Code Background Color</label></th>
             <td>
                 <input type="text" id="direktt_cross_sell_qr_code_bg_color" name="direktt_cross_sell_qr_code_bg_color" value="<?php echo esc_attr($qr_code_bg_color ?? '#ffffff'); ?>" />
-                <p class="description">TODO Promeniti ovaj tekst: This color will be the color of the background in the QR Code.</p>
+                <p class="description">Optional Color of the QR Code Background.</p>
                 <script>
                     jQuery(document).ready(function($) {
                         $('#direktt_cross_sell_qr_code_bg_color').wpColorPicker();
@@ -1243,10 +1243,10 @@ function direktt_cross_sell_coupon_groups_render_custom_box($post)
             </td>
         </tr>
         <tr>
-            <th scope="row"><label for="direktt_cross_sell_qr_code_message">QR Code Message</label></th>
+            <th scope="row"><label for="direktt_cross_sell_qr_code_message">Text for QR Code Sharing</label></th>
             <td>
                 <input type="text" name="direktt_cross_sell_qr_code_message" id="direktt_cross_sell_qr_code_message" value="<?php echo esc_attr($qr_code_message); ?>" />
-                <p class="description">TODO Promeniti ovaj tekst: When Share button on the Bulk Coupons shortcode page is clicked this message will be displayed with the QR Code.</p>
+                <p class="description">Optional Text to Share With Coupon QR Code</p>
             </td>
         </tr>
     </table>
