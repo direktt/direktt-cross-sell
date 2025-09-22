@@ -71,7 +71,7 @@ function direktt_cross_sell_activation_check()
             <tr class="plugin-update-tr">
                 <td colspan="<?php echo $colspan; ?>" style="box-shadow: none;">
                     <div style="color: #b32d2e; font-weight: bold;">
-                        <?php echo (esc_html__('Direktt Cross-Sell requires the Direktt WordPress Plugin to be active. Please activate Direktt WordPress Plugin first.', 'direktt-cross-sell')); ?>
+                        <?php esc_html_e('Direktt Cross-Sell requires the Direktt WordPress Plugin to be active. Please activate Direktt WordPress Plugin first.', 'direktt-cross-sell'); ?>
                     </div>
                 </td>
             </tr>
@@ -162,7 +162,7 @@ function direktt_cross_sell_settings()
     <div class="wrap">
         <?php if ($success): ?>
             <div class="notice notice-success">
-                <p>Settings saved successfully.</p>
+                <p><?php esc_html_e('Settings saved successfully.', 'direktt-cross-sell'); ?></p>
             </div>
         <?php endif; ?>
         <form method="post" action="">
@@ -170,7 +170,7 @@ function direktt_cross_sell_settings()
 
             <table class="form-table">
                 <tr>
-                    <th scope="row"><label for="direktt_cross_sell_issue_categories">Users to Issue Coupons</label></th>
+                    <th scope="row"><label for="direktt_cross_sell_issue_categories"><?php esc_html_e('Users to Issue Coupons', 'direktt-cross-sell'); ?></label></th>
                     <td>
                         <select name="direktt_cross_sell_issue_categories" id="direktt_cross_sell_issue_categories">
                             <option value="0">Select Category</option>
@@ -180,11 +180,11 @@ function direktt_cross_sell_settings()
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <p class="description">Users belonging to this category will be able to Issue Coupons.</p>
+                        <p class="description"><?php esc_html_e('Users belonging to this category will be able to Issue Coupons.', 'direktt-cross-sell'); ?></p>
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="direktt_cross_sell_issue_tags">Users to Issue Coupons</label></th>
+                    <th scope="row"><label for="direktt_cross_sell_issue_tags"><?php esc_html_e('Users to Issue Coupons', 'direktt-cross-sell'); ?></label></th>
                     <td>
                         <select name="direktt_cross_sell_issue_tags" id="direktt_cross_sell_issue_tags">
                             <option value="0">Select Tag</option>
@@ -194,11 +194,11 @@ function direktt_cross_sell_settings()
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <p class="description">Users with this tag will be able to Issue Coupons.</p>
+                        <p class="description"><?php esc_html_e('Users with this tag will be able to Issue Coupons.', 'direktt-cross-sell'); ?></p>
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="direktt_cross_sell_review_categories">Users to Review Coupons</label></th>
+                    <th scope="row"><label for="direktt_cross_sell_review_categories"><?php esc_html_e('Users to Review Coupons', 'direktt-cross-sell'); ?></label></th>
                     <td>
                         <select name="direktt_cross_sell_review_categories" id="direktt_cross_sell_review_categories">
                             <option value="0">Select Category</option>
@@ -208,11 +208,11 @@ function direktt_cross_sell_settings()
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <p class="description">Users belonging to this category will be able to Review Coupons.</p>
+                        <p class="description"><?php esc_html_e('Users belonging to this category will be able to Review Coupons.', 'direktt-cross-sell'); ?></p>
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="direktt_cross_sell_review_tags">Users to Review Coupons</label></th>
+                    <th scope="row"><label for="direktt_cross_sell_review_tags"><?php esc_html_e('Users to Review Coupons', 'direktt-cross-sell'); ?></label></th>
                     <td>
                         <select name="direktt_cross_sell_review_tags" id="direktt_cross_sell_review_tags">
                             <option value="0">Select Tag</option>
@@ -895,6 +895,11 @@ function handle_direktt_cross_sell_get_issued_report()
         wp_die();
     }
 
+    if (! current_user_can('manage_options')) {
+        wp_send_json_error(esc_html__('Unauthorized.', 'direktt-cross-sell'));
+        wp_die();
+    }
+
     if (! isset($_POST['post_id'], $_POST['range'])) {
         wp_send_json_error(esc_html__('Data error.', 'direktt-cross-sell'));
         wp_die();
@@ -982,6 +987,11 @@ function handle_direktt_cross_sell_get_used_report()
 {
     if (! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'direktt_reports_meta_box')) {
         wp_send_json_error(esc_html__('Invalid nonce.', 'direktt-cross-sell'));
+        wp_die();
+    }
+
+    if (! current_user_can('manage_options')) {
+        wp_send_json_error(esc_html__('Unauthorized.', 'direktt-cross-sell'));
         wp_die();
     }
 
@@ -1079,6 +1089,8 @@ function save_direktt_cross_sell_partner_meta($post_id)
     if (!isset($_POST['post_type']) || $_POST['post_type'] !== 'direkttcspartners') return;
 
     if (!isset($_POST['direktt_cross_sell_nonce']) || !wp_verify_nonce($_POST['direktt_cross_sell_nonce'], 'direktt_cross_sell_save')) return;
+
+    if (! current_user_can('edit_post', $post_id)) return;
 
     if (isset($_POST['direktt_cross_sell_partners_for_who_can_edit']) && is_array($_POST['direktt_cross_sell_partners_for_who_can_edit'])) {
 
@@ -1260,6 +1272,8 @@ function save_direktt_cross_sell_coupon_groups_meta($post_id)
     if (!isset($_POST['post_type']) || $_POST['post_type'] !== 'direkttcscoupon') return;
 
     if (!isset($_POST['direktt_cross_sell_nonce']) || !wp_verify_nonce($_POST['direktt_cross_sell_nonce'], 'direktt_cross_sell_save')) return;
+
+    if (! current_user_can('edit_post', $post_id)) return;
 
     if (isset($_POST['direktt_cross_sell_partner_for_coupon_group'])) {
         update_post_meta(
@@ -2397,6 +2411,8 @@ function direktt_cross_sell_process_coupon_invalidate()
         wp_verify_nonce($_POST['direktt_cs_invalidate_coupon_nonce'], 'direktt_cs_invalidate_coupon_action')
     ) {
 
+        
+
         $updated = $wpdb->update(
             $table,
             ['coupon_valid' => 0],
@@ -2560,7 +2576,8 @@ function direktt_cross_sell_user_tool()
                     "action" => array(
                         "type" => "api",
                         "params" => array(
-                            "actionType" => "issue_coupon"
+                            "actionType" => "issue_coupon",
+                            "successMessage" => "Coupon has been succesfully issued!"
                         ),
                         "retVars" => array(
                             "partner_id" => sanitize_text_field($partner_id),
