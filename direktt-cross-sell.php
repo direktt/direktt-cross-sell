@@ -1713,7 +1713,7 @@ function direktt_cross_sell_render_use_coupon($use_coupon_id)
 
         // Back
         $back_url = remove_query_arg(['direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag']);
-        echo '<a href="' . esc_url($back_url) . '" class="button button-invert">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
+        echo '<a href="' . esc_url($back_url) . '" class="button button-invert direktt-cross-sell-back">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
     }
 }
 
@@ -1774,7 +1774,7 @@ function direktt_cross_sell_render_one_partner($partner_id)
     if (!$partner || $partner->post_type !== 'direkttcspartners') {
         echo '<p>' . esc_html__('Invalid partner selected.', 'direktt-cross-sell') . '</p>';
         $back_url = remove_query_arg(['direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag']);
-        echo '<a href="' . esc_url($back_url) . '" class="button button-invert">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
+        echo '<a href="' . esc_url($back_url) . '" class="button button-invert direktt-cross-sell-back">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
         return;
     }
 
@@ -1817,7 +1817,7 @@ function direktt_cross_sell_render_one_partner($partner_id)
         </script>
     <?php
     }
-    echo '<a href="' . esc_url(remove_query_arg(['direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag'])) . '" class="button button-invert">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
+    echo '<a href="' . esc_url(remove_query_arg(['direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag'])) . '" class="button button-invert direktt-cross-sell-back">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
 }
 
 function direktt_cross_sell_process_coupon_issue($partner_id, $coupon_group_id)
@@ -2681,7 +2681,7 @@ function direktt_cross_sell_user_tool()
         if (!$partner || $partner->post_type !== 'direkttcspartners') {
             echo '<p>' . esc_html__('Invalid partner selected.', 'direktt-cross-sell') . '</p>';
             $back_url = remove_query_arg(['direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag']);
-            echo '<a href="' . esc_url($back_url) . '" class="button button-invert">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
+            echo '<a href="' . esc_url($back_url) . '" class="button button-invert direktt-cross-sell-back">' . esc_html__('Back to Cross-Sell', 'direktt-cross-sell') . '</a>';
             return;
         }
 
