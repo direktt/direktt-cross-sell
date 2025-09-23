@@ -1649,6 +1649,16 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
 		$partner_post      = get_post( $coupon->partner_id );
 		$coupon_group_post = get_post( $coupon->coupon_group_id );
 
+        if ( ! $partner_post || ! $coupon_group_post ) {
+            echo '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div>';
+            return;
+        } else {
+            if ( $partner_post->post_status !== 'publish' || $coupon_group_post->post_status !== 'publish' ) {
+                echo '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div>';
+                return;
+            }
+        }
+
 		$partner_name = $partner_post ? esc_html( $partner_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
 		$group_title  = $coupon_group_post ? esc_html( $coupon_group_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
 		$group_descr  = $coupon_group_post ? esc_html( $coupon_group_post->post_content ) : '';
@@ -1801,7 +1811,7 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
 	}
 
 	$partner = get_post( $partner_id );
-	if ( ! $partner || $partner->post_type !== 'direkttcspartners' ) {
+	if ( ! $partner || $partner->post_type !== 'direkttcspartners' || $partner->post_status !== 'publish' ) {
 		echo '<p>' . esc_html__( 'Invalid partner selected.', 'direktt-cross-sell' ) . '</p>';
 		$back_url = remove_query_arg( array( 'direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag' ) );
 		echo '<a href="' . esc_url( $back_url ) . '" class="button button-invert direktt-cross-sell-back">' . esc_html__( 'Back to Cross-Sell', 'direktt-cross-sell' ) . '</a>';
@@ -1976,12 +1986,26 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 	$filtered_coupon_results = array();
 
 	foreach ( $coupon_results as $row ) {
-		$partner_post      = get_post( $row->partner_id );
-		$partner_name      = $partner_post ? esc_html( $partner_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
+		$partner_post = get_post( $row->partner_id );
+        if ( ! $partner_post ) {
+            continue;
+        } else {
+            if ( $partner_post->post_status !== 'publish' ) {
+                continue;
+            }
+            $partner_name = esc_html( $partner_post->post_title );
+        }
 		$coupon_group_post = get_post( $row->coupon_group_id );
-		$group_title       = $coupon_group_post ? esc_html( $coupon_group_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
-		$issued            = esc_html( mysql2date( 'Y-m-d H:i:s', $row->coupon_time ) );
-		$expires           = ( empty( $row->coupon_expires ) || $row->coupon_expires == '0000-00-00 00:00:00' )
+        if ( ! $coupon_group_post ) {
+            continue;
+        } else {
+            if ( $coupon_group_post->post_status !== 'publish' ) {
+                continue;
+            }
+            $group_title = esc_html( $coupon_group_post->post_title );
+        }
+		$issued  = esc_html( mysql2date( 'Y-m-d H:i:s', $row->coupon_time ) );
+		$expires = ( empty( $row->coupon_expires ) || $row->coupon_expires == '0000-00-00 00:00:00' )
 			? esc_html__( 'No expiry', 'direktt-cross-sell' )
 			: esc_html( mysql2date( 'Y-m-d H:i:s', $row->coupon_expires ) );
 
@@ -2016,13 +2040,27 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 		echo '</tr></thead><tbody>';
 
 		foreach ( $filtered_coupon_results as $row ) {
-			$partner_post      = get_post( $row->partner_id );
-			$partner_name      = $partner_post ? esc_html( $partner_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
+			$partner_post = get_post( $row->partner_id );
+            if ( ! $partner_post ) {
+                continue;
+            } else {
+                if ( $partner_post->post_status !== 'publish' ) {
+                    continue;
+                }
+                $partner_name = esc_html( $partner_post->post_title );
+            }
 			$coupon_group_post = get_post( $row->coupon_group_id );
-			$group_title       = $coupon_group_post ? esc_html( $coupon_group_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
+			if ( ! $coupon_group_post ) {
+				continue;
+			} else {
+                if ( $coupon_group_post->post_status !== 'publish' ) {
+                    continue;
+                }
+				$group_title = esc_html( $coupon_group_post->post_title );
+			}
 			// $issued = esc_html(mysql2date('Y-m-d H:i:s', $row->coupon_time));
-			$issued    = $row->coupon_time;
-			$expires   = ( empty( $row->coupon_expires ) || $row->coupon_expires == '0000-00-00 00:00:00' )
+			$issued  = $row->coupon_time;
+			$expires = ( empty( $row->coupon_expires ) || $row->coupon_expires == '0000-00-00 00:00:00' )
 				? esc_html__( 'No expiry', 'direktt-cross-sell' )
 				: esc_html( mysql2date( 'Y-m-d H:i:s', $row->coupon_expires ) );
 			$max_usage = intval( get_post_meta( $row->coupon_group_id, 'direktt_cross_sell_max_usage', true ) );
@@ -2201,12 +2239,26 @@ function direktt_cross_sell_my_coupons() {
 	$filtered_coupon_results = array();
 
 	foreach ( $coupon_results as $row ) {
-		$partner_post      = get_post( $row->partner_id );
-		$partner_name      = $partner_post ? esc_html( $partner_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
+		$partner_post = get_post( $row->partner_id );
+        if ( ! $partner_post ) {
+            continue;
+        } else {
+            if ( $partner_post->post_status !== 'publish' ) {
+                continue;
+            }
+            $partner_name = esc_html( $partner_post->post_title );
+        }
 		$coupon_group_post = get_post( $row->coupon_group_id );
-		$group_title       = $coupon_group_post ? esc_html( $coupon_group_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
-		$issued            = esc_html( mysql2date( 'Y-m-d H:i:s', $row->coupon_time ) );
-		$expires           = ( empty( $row->coupon_expires ) || $row->coupon_expires == '0000-00-00 00:00:00' )
+        if ( ! $coupon_group_post ) {
+            continue;
+        } else {
+            if ( $coupon_group_post->post_status !== 'publish' ) {
+                continue;
+            }
+            $group_title = esc_html( $coupon_group_post->post_title );
+        }
+		$issued  = esc_html( mysql2date( 'Y-m-d H:i:s', $row->coupon_time ) );
+		$expires = ( empty( $row->coupon_expires ) || $row->coupon_expires == '0000-00-00 00:00:00' )
 			? esc_html__( 'No expiry', 'direktt-cross-sell' )
 			: esc_html( mysql2date( 'Y-m-d H:i:s', $row->coupon_expires ) );
 
@@ -2240,11 +2292,25 @@ function direktt_cross_sell_my_coupons() {
 
 		foreach ( $filtered_coupon_results as $row ) {
 			$partner_post      = get_post( $row->partner_id );
-			$partner_name      = $partner_post ? esc_html( $partner_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
+            if ( ! $partner_post ) {
+                continue;
+            } else {
+                if ( $partner_post->post_status !== 'publish' ) {
+                    continue;
+                }
+                $partner_name = esc_html( $partner_post->post_title );
+            }
 			$coupon_group_post = get_post( $row->coupon_group_id );
-			$group_title       = $coupon_group_post ? esc_html( $coupon_group_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
-			$issued            = esc_html( mysql2date( 'Y-m-d H:i:s', $row->coupon_time ) );
-			$expires           = ( empty( $row->coupon_expires ) || $row->coupon_expires == '0000-00-00 00:00:00' )
+            if ( ! $coupon_group_post ) {
+                continue;
+            } else {
+                if ( $coupon_group_post->post_status !== 'publish' ) {
+                    continue;
+                }
+                $group_title = esc_html( $coupon_group_post->post_title );
+            }
+			$issued  = esc_html( mysql2date( 'Y-m-d H:i:s', $row->coupon_time ) );
+			$expires = ( empty( $row->coupon_expires ) || $row->coupon_expires == '0000-00-00 00:00:00' )
 				? esc_html__( 'No expiry', 'direktt-cross-sell' )
 				: esc_html( mysql2date( 'Y-m-d H:i:s', $row->coupon_expires ) );
 			$max_usage         = intval( get_post_meta( $row->coupon_group_id, 'direktt_cross_sell_max_usage', true ) );
@@ -2567,23 +2633,32 @@ function direktt_cross_sell_user_tool() {
 			)
 		);
 
+        ob_start();
+        $back_url = remove_query_arg( array( 'coupon_id' ) );
+		$back_url = add_query_arg( 'direktt_action', 'my_coupons', $back_url );
+		echo '<a href="' . esc_url( $back_url ) . '">' . esc_html__( 'Back', 'direktt-cross-sell' ) . '</a>';
+
 		if ( empty( $coupons ) ) {
-			ob_start();
 			echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
 			return ob_get_clean();
 		}
 
 		$coupon = $coupons[0];
 
-		ob_start();
+        $partner_post = get_post( $coupon->partner_id );
+        if ( ! $partner_post || $partner_post->post_status !== 'publish' ) {
+            echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
+            return ob_get_clean();
+        }
+        $coupon_group_post = get_post( $coupon->coupon_group_id );
+        if ( ! $coupon_group_post || $coupon_group_post->post_status !== 'publish' ) {
+			echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
+			return ob_get_clean();
+		}
 
 		$qr_code_image    = get_post_meta( intval( $coupon->partner_id ), 'direktt_cross_sell_qr_code_image', true );
 		$qr_code_color    = get_post_meta( intval( $coupon->partner_id ), 'direktt_cross_sell_qr_code_color', true );
 		$qr_code_bg_color = get_post_meta( intval( $coupon->partner_id ), 'direktt_cross_sell_qr_code_bg_color', true );
-
-		$back_url = remove_query_arg( array( 'coupon_id' ) );
-		$back_url = add_query_arg( 'direktt_action', 'my_coupons', $back_url );
-		echo '<a href="' . esc_url( $back_url ) . '">' . esc_html__( 'Back', 'direktt-cross-sell' ) . '</a>';
 
 		$check_slug     = get_option( 'direktt_cross_sell_check_slug' );
 		$validation_url = site_url( $check_slug, 'https' );
@@ -2650,6 +2725,7 @@ function direktt_cross_sell_user_tool() {
 			isset( $_POST['direktt_cs_issue_coupon_nonce'] ) &&
 			wp_verify_nonce( $_POST['direktt_cs_issue_coupon_nonce'], 'direktt_cs_issue_coupon_action' )
 		) {
+
 			$qr_code_image    = get_post_meta( intval( $partner_id ), 'direktt_cross_sell_qr_code_image', true );
 			$qr_code_color    = get_post_meta( intval( $partner_id ), 'direktt_cross_sell_qr_code_color', true );
 			$qr_code_bg_color = get_post_meta( intval( $partner_id ), 'direktt_cross_sell_qr_code_bg_color', true );
@@ -2658,6 +2734,17 @@ function direktt_cross_sell_user_tool() {
 			$back_url = remove_query_arg( array( 'coupon_id', 'direktt_action' ) );
 			$back_url = add_query_arg( 'direktt_action', 'view_partner_coupons', $back_url );
 			echo '<a href="' . esc_url( $back_url ) . '">' . esc_html__( 'Back', 'direktt-cross-sell' ) . '</a>';
+
+            $partner_post = get_post( $partner_id );
+            if ( ! $partner_post || $partner_post->post_status !== 'publish' ) {
+                echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
+                return ob_get_clean();
+            }
+            $coupon_group_post = get_post( intval( $_POST['direktt_coupon_group_id'] ) );
+            if ( ! $coupon_group_post || $coupon_group_post->post_status !== 'publish' ) {
+                echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
+                return ob_get_clean();
+            }
 
 			$actionObject = json_encode(
 				array(
@@ -2755,7 +2842,7 @@ function direktt_cross_sell_user_tool() {
 		}
 
 		$partner = get_post( $partner_id );
-		if ( ! $partner || $partner->post_type !== 'direkttcspartners' ) {
+		if ( ! $partner || $partner->post_type !== 'direkttcspartners' || $partner->post_status !== 'publish' ) {
 			echo '<p>' . esc_html__( 'Invalid partner selected.', 'direktt-cross-sell' ) . '</p>';
 			$back_url = remove_query_arg( array( 'direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag' ) );
 			echo '<a href="' . esc_url( $back_url ) . '" class="button button-invert direktt-cross-sell-back">' . esc_html__( 'Back to Cross-Sell', 'direktt-cross-sell' ) . '</a>';
