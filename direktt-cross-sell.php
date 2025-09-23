@@ -2125,95 +2125,6 @@ function direktt_cross_sell_my_coupons() {
 	$table = $wpdb->prefix . 'direktt_cross_sell_issued';
 	$now   = current_time( 'mysql' );
 
-	// --- Show Use Coupon Screen ---
-	if ( isset( $_GET['direktt_action'] ) && $_GET['direktt_action'] === 'view_coupon' && isset( $_GET['coupon_id'] ) ) {
-
-		$coupons = $wpdb->get_results(
-			$wpdb->prepare(
-				"
-        SELECT * FROM $table
-        WHERE ID = %d
-      AND direktt_receiver_user_id = %s
-      AND coupon_valid = 1
-",
-				intval( $_GET['coupon_id'] ),
-				$subscription_id
-			)
-		);
-
-		if ( empty( $coupons ) ) {
-			ob_start();
-			echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
-			return ob_get_clean();
-		}
-
-		$coupon = $coupons[0];
-
-		ob_start();
-
-		$qr_code_image    = get_post_meta( intval( $coupon->partner_id ), 'direktt_cross_sell_qr_code_image', true );
-		$qr_code_color    = get_post_meta( intval( $coupon->partner_id ), 'direktt_cross_sell_qr_code_color', true );
-		$qr_code_bg_color = get_post_meta( intval( $coupon->partner_id ), 'direktt_cross_sell_qr_code_bg_color', true );
-
-		$back_url = remove_query_arg( array( 'direktt_action', 'coupon_id' ) );
-		echo '<a href="' . esc_url( $back_url ) . '">' . esc_html__( 'Back', 'direktt-cross-sell' ) . '</a>';
-
-		$check_slug     = get_option( 'direktt_cross_sell_check_slug' );
-		$validation_url = site_url( $check_slug, 'https' );
-
-		$actionObject = json_encode(
-			array(
-				'action' => array(
-					'type'    => 'link',
-					'params'  => array(
-						'url'    => $validation_url,
-						'target' => 'app',
-					),
-					'retVars' => array(
-						'coupon_code' => $coupon->coupon_guid,
-					),
-				),
-			)
-		);
-
-		global $enqueue_direktt_cross_sell_scripts;
-		$enqueue_direktt_cross_sell_scripts = true;
-
-		?>
-
-		<div id="canvas"></div>
-		<script type="text/javascript">
-			const qrCode = new QRCodeStyling({
-				width: 350,
-				height: 350,
-				type: "svg",
-				data: '<?php echo $actionObject; ?>',
-				image: '<?php echo $qr_code_image ? esc_js( $qr_code_image ) : ''; ?>',
-				dotsOptions: {
-					color: '<?php echo $qr_code_color ? esc_js( $qr_code_color ) : '#000000'; ?>',
-					type: "rounded"
-				},
-				backgroundOptions: {
-					color: '<?php echo $qr_code_bg_color ? esc_js( $qr_code_bg_color ) : '#ffffff'; ?>',
-				},
-				imageOptions: {
-					crossOrigin: "anonymous",
-					margin: 20
-				}
-			});
-
-			qrCode.append(document.getElementById("canvas"));
-			/* qrCode.download({
-				name: "qr",
-				extension: "svg"
-			});*/
-		</script>
-
-		<?php
-
-		return ob_get_clean();
-	}
-
 	ob_start();
 
 	$coupon_results = array();
@@ -2446,11 +2357,15 @@ function direktt_cross_sell_coupon_validation() {
 		$coupon_id  = intval( $_GET['coupon_id'] );
 		$partner_id = intval( $_GET['partner_id'] );
 	} else {
-		return;
+        ob_start();
+        echo esc_html__( 'The referenced coupon does not exist or you are not authorized to manage it.', 'direktt-cross-sell' );
+		return ob_get_clean();
 	}
-
+    
 	if ( ! direktt_cross_sell_user_can_validate( $partner_id ) ) {
-		return;
+        ob_start();
+        echo esc_html__( 'The referenced coupon does not exist or you are not authorized to manage it.', 'direktt-cross-sell' );
+        return ob_get_clean();
 	}
 
 	$notice = ''; // For status flags after redirect
@@ -2465,6 +2380,13 @@ function direktt_cross_sell_coupon_validation() {
 
 		$partner_post      = get_post( $coupon->partner_id );
 		$coupon_group_post = get_post( $coupon->coupon_group_id );
+        if ( ! $partner_post || ! $coupon_group_post ) {
+            return '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div>';
+        } else {
+            if ( $partner_post->post_status !== 'publish' || $coupon_group_post->post_status !== 'publish' ) {
+                return '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div>';
+            }
+        }
 
 		$issued_date = esc_html( mysql2date( 'Y-m-d H:i:s', $coupon->coupon_time ) );
 		$expires     = ( empty( $coupon->coupon_expires ) || $coupon->coupon_expires == '0000-00-00 00:00:00' )
@@ -2683,7 +2605,10 @@ function direktt_cross_sell_user_tool() {
 
 		?>
 
+        <p class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></p>
+        <p class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></p>
 		<div id="canvas"></div>
+        <p class="direktt-cross-sell-content"><?php echo nl2br( esc_html( $coupon_group_post->post_content ) ); ?></p>
 		<script type="text/javascript">
 			const qrCode = new QRCodeStyling({
 				width: 350,
@@ -2768,7 +2693,10 @@ function direktt_cross_sell_user_tool() {
 
 			?>
 
+            <p class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></p>
+            <p class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></p>
 			<div id="canvas"></div>
+            <p class="direktt-cross-sell-content"><?php echo nl2br( esc_html( $coupon_group_post->post_content ) ); ?></p>
 			<button id="share"><?php echo esc_html__( 'Share', 'direktt-cross-sell' ); ?></button>
 			<script type="text/javascript">
 				const qrCode = new QRCodeStyling({
