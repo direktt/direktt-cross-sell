@@ -1630,6 +1630,7 @@ function direktt_cross_sell_process_use_coupon( $coupon ) {
 				'%s',
 			)
 		);
+        // TODO if inserted success send usage message
 		$redirect_url = add_query_arg(
 			array(
 				'direktt_action'      => 'use_coupon',
@@ -2425,7 +2426,7 @@ function direktt_cross_sell_enqueue_popup_styles() {
     global $direktt_cs_enqueue_popup_styles;
     if ( $direktt_cs_enqueue_popup_styles ) {
         wp_enqueue_script( 'jquery' );
-        wp_enqueue_style( 'direktt-cross-sell-popup', plugin_dir_url( __FILE__ ) . 'assets/css/direktt-profile.css', array(), '1.0.0' );
+        wp_enqueue_style( 'direktt-cross-sell-popup', plugin_dir_url( __FILE__ ) . 'assets/css/direktt-popup.css', array(), '1.0.0' );
     }
 }
 
