@@ -2592,89 +2592,9 @@ function direktt_cross_sell_process_coupon_invalidate() {
 	global $wpdb;
 	$table = $wpdb->prefix . 'direktt_cross_sell_issued';
 
-    global $direktt_user;
-
-    // if not admin return
-    // dovuci kats i tags
-    // proveriti da li ima tax odgovarajuce za partnera
-    // proveriti da li ima ono for who can edit
-    // $partners          = direktt_cross_sell_get_partners();
-	// $eligible_partners = array();
-	// $category_ids      = Direktt_User::get_user_categories( $direktt_user['ID'] );
-	// $tag_ids           = Direktt_User::get_user_tags( $direktt_user['ID'] );
-	// if ( Direktt_User::is_direktt_admin() ) {
-	// 	$eligible_partners = $partners;
-	// } else {
-	// 	if ( empty( $category_ids ) && empty( $tag_ids ) ) {
-	// 		$partners_with_cat_tag = array();
-	// 	} else {
-	// 		$meta_query = array( 'relation' => 'OR' );
-
-	// 		if ( ! empty( $category_ids ) ) {
-	// 			$meta_query[] = array(
-	// 				'key'     => 'direktt_cross_sell_partner_categories',
-	// 				'value'   => $category_ids,
-	// 				'compare' => 'IN',
-	// 			);
-	// 		}
-
-	// 		if ( ! empty( $tag_ids ) ) {
-	// 			$meta_query[] = array(
-	// 				'key'     => 'direktt_cross_sell_partner_tags',
-	// 				'value'   => $tag_ids,
-	// 				'compare' => 'IN',
-	// 			);
-	// 		}
-
-	// 		$args = array(
-	// 			'post_type'      => 'direkttcspartners',
-	// 			'post_status'    => 'publish',
-	// 			'posts_per_page' => -1,
-	// 			'meta_query'     => $meta_query,
-	// 		);
-
-	// 		$partners_with_cat_tag = get_posts( $args );
-	// 	}
-
-	// 	if ( ! empty( $partners_with_cat_tag ) ) {
-	// 		foreach ( $partners_with_cat_tag as $partner ) {
-	// 			$eligible_partners[] = array(
-	// 				'ID'    => $partner->ID,
-	// 				'title' => $partner->post_title,
-	// 			);
-
-	// 			$partners_for_edit = get_post_meta( $partner->ID, 'direktt_cross_sell_partners_for_who_can_edit', false );
-	// 			if ( ! empty( $partners_for_edit ) ) {
-	// 				foreach ( $partners_for_edit as $edit_partner_id ) {
-	// 					$edit_partner = get_post( $edit_partner_id );
-	// 					if ( $edit_partner ) {
-	// 						$eligible_partners[] = array(
-	// 							'ID'    => $edit_partner->ID,
-	// 							'title' => $edit_partner->post_title,
-	// 						);
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-    // if ( ! empty( $eligible_partners ) ) {
-	// 	if ( ! is_array( $eligible_partners ) ) {
-	// 		$eligible_partners = array( $eligible_partners );
-	// 	} else {
-	// 		$eligible_partners = array_unique( $eligible_partners, SORT_REGULAR );
-	// 	}
-
-	// 	foreach ( $eligible_partners as $eligible_partner ) {
-	// 		$coupons = direktt_cross_sell_get_partner_coupon_groups( $eligible_partner['ID'] );
-	// 		if ( empty( $coupons ) ) {
-	// 			continue;
-	// 		}
-	// 	}
-	// } else {
-    //     return;
-    // }
+    if ( ! Direktt_User::is_direktt_admin() ) {
+		return;
+	}
 
 	if (
 		isset( $_POST['direktt_cs_invalidate_coupon'] ) &&
@@ -2682,7 +2602,6 @@ function direktt_cross_sell_process_coupon_invalidate() {
 		isset( $_POST['direktt_cs_invalidate_coupon_nonce'] ) &&
 		wp_verify_nonce( $_POST['direktt_cs_invalidate_coupon_nonce'], 'direktt_cs_invalidate_coupon_action' )
 	) {
-        // iz baze dovuci partner_id za taj kupon
 		$updated = $wpdb->update(
 			$table,
 			array( 'coupon_valid' => 0 ),
