@@ -67,6 +67,9 @@ add_filter( 'manage_edit-direkttcscoupon_sortable_columns', 'direktt_cross_sell_
 // Add sorting functionality for the Cross Sell Partner column
 add_action( 'pre_get_posts', 'direktt_cross_sell_sort_partner_column' );
 
+// Enqueue popup styles
+add_action( 'wp_enqueue_scripts', 'direktt_cross_sell_enqueue_popup_styles' );
+
 function direktt_cross_sell_activation_check() {
 	if ( ! function_exists( 'is_plugin_active' ) ) {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -513,17 +516,17 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 									html += renderGroup(i, partners[i]);
 								}
 							}
-							$('#direktt_cross_sell_partners_repeater').html(html);
+							$( '#direktt_cross_sell_partners_repeater' ).html(html);
 						}
 						$(document).ready(function() {
 							refreshPartners();
-							$('#add_partner').on('click', function(e) {
+							$( '#add_partner' ).off( 'click' ).on( 'click', function(e) {
 								e.preventDefault();
-								$('#direktt_cross_sell_partners_repeater').append(renderGroup('', '0'));
+								$( '#direktt_cross_sell_partners_repeater' ).append( renderGroup( '', '0' ) );
 							});
-							$('#direktt_cross_sell_partners_repeater').on('click', '.remove_partner', function(e) {
+							$( '#direktt_cross_sell_partners_repeater' ).off( 'click' ).on( 'click', '.remove_partner', function(e) {
 								e.preventDefault();
-								$(this).closest('.partner').remove();
+								$( this ).closest( '.partner' ).remove();
 							});
 						});
 					})(jQuery);
@@ -569,7 +572,7 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 					jQuery(document).ready(function($) {
 						var mediaUploader;
 
-						$('#direktt_cross_sell_qr_code_image_button').click(function(e) {
+						$( '#direktt_cross_sell_qr_code_image_button' ).click(function(e) {
 							e.preventDefault();
 
 							// If the uploader object has already been created, reopen it
@@ -588,10 +591,10 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 							});
 
 							// When an image is selected, run a callback
-							mediaUploader.on('select', function() {
-								var attachment = mediaUploader.state().get('selection').first().toJSON();
-								$('#direktt_cross_sell_qr_code_image').val(attachment.url);
-								$('#direktt_cross_sell_qr_code_image').trigger('change');
+							mediaUploader.on( 'select', function() {
+								var attachment = mediaUploader.state().get( 'selection' ).first().toJSON();
+								$( '#direktt_cross_sell_qr_code_image' ).val( attachment.url );
+								$( '#direktt_cross_sell_qr_code_image' ).trigger( 'change' );
 							});
 
 							// Open the uploader dialog
@@ -607,8 +610,8 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 				<input type="text" id="direktt_cross_sell_qr_code_color" name="direktt_cross_sell_qr_code_color" value="<?php echo esc_attr( $qr_code_color ?? '#000000' ); ?>" />
 				<p class="description"><?php echo esc_html__( 'Optional Color of Dots in the QR Code', 'direktt-cross-sell' ); ?></p>
 				<script>
-					jQuery(document).ready(function($) {
-						$('#direktt_cross_sell_qr_code_color').wpColorPicker();
+					jQuery( document ).ready( function($) {
+						$( '#direktt_cross_sell_qr_code_color' ).wpColorPicker();
 					});
 				</script>
 			</td>
@@ -619,8 +622,8 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 				<input type="text" id="direktt_cross_sell_qr_code_bg_color" name="direktt_cross_sell_qr_code_bg_color" value="<?php echo esc_attr( $qr_code_bg_color ?? '#ffffff' ); ?>" />
 				<p class="description"><?php echo esc_html__( 'Optional Color of the QR Code Background.', 'direktt-cross-sell' ); ?></p>
 				<script>
-					jQuery(document).ready(function($) {
-						$('#direktt_cross_sell_qr_code_bg_color').wpColorPicker();
+					jQuery( document ).ready( function($) {
+						$( '#direktt_cross_sell_qr_code_bg_color' ).wpColorPicker();
 					});
 				</script>
 			</td>
@@ -666,19 +669,19 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 					qrCode.append(document.getElementById("canvas"));
 
 					jQuery(document).ready(function($) {
-						$('#direktt_cross_sell_qr_code_image').on('change', function() {
+						$( '#direktt_cross_sell_qr_code_image' ).on( 'change', function() {
 							var newQrCode = new QRCodeStyling({
 								width: 350,
 								height: 350,
 								type: "svg",
 								data: '<?php echo $actionObject; ?>',
-								image: $('#direktt_cross_sell_qr_code_image').val() ? $('#direktt_cross_sell_qr_code_image').val() : '',
+								image: $( '#direktt_cross_sell_qr_code_image' ).val() ? $( '#direktt_cross_sell_qr_code_image' ).val() : '',
 								dotsOptions: {
-									color: $('#direktt_cross_sell_qr_code_color').val() ? $('#direktt_cross_sell_qr_code_color').val() : '#000000',
+									color: $( '#direktt_cross_sell_qr_code_color' ).val() ? $( '#direktt_cross_sell_qr_code_color' ).val() : '#000000',
 									type: "rounded"
 								},
 								backgroundOptions: {
-									color: $('#direktt_cross_sell_qr_code_bg_color').val() ? $('#direktt_cross_sell_qr_code_bg_color').val() : '#ffffff',
+									color: $( '#direktt_cross_sell_qr_code_bg_color' ).val() ? $( '#direktt_cross_sell_qr_code_bg_color' ).val() : '#ffffff',
 								},
 								imageOptions: {
 									crossOrigin: "anonymous",
@@ -686,10 +689,10 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 								}
 							});
 
-							$('#canvas').empty();
-							newQrCode.append(document.getElementById("canvas"));
+							$( '#canvas' ).empty();
+							newQrCode.append( document.getElementById( "canvas" ) );
 						});
-						$('#direktt_cross_sell_qr_code_color').wpColorPicker({
+						$( '#direktt_cross_sell_qr_code_color' ).wpColorPicker({
 							change: function(event, ui) {
 								let color = ui.color.toString();
 
@@ -698,13 +701,13 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 									height: 350,
 									type: "svg",
 									data: '<?php echo $actionObject; ?>',
-									image: $('#direktt_cross_sell_qr_code_image').val() ? $('#direktt_cross_sell_qr_code_image').val() : '',
+									image: $( '#direktt_cross_sell_qr_code_image' ).val() ? $( '#direktt_cross_sell_qr_code_image' ).val() : '',
 									dotsOptions: {
 										color: color,
 										type: "rounded"
 									},
 									backgroundOptions: {
-										color: $('#direktt_cross_sell_qr_code_bg_color').val() ? $('#direktt_cross_sell_qr_code_bg_color').val() : '#ffffff',
+										color: $( '#direktt_cross_sell_qr_code_bg_color' ).val() ? $( '#direktt_cross_sell_qr_code_bg_color' ).val() : '#ffffff',
 									},
 									imageOptions: {
 										crossOrigin: "anonymous",
@@ -712,11 +715,11 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 									}
 								});
 
-								$('#canvas').empty();
+								$( '#canvas' ).empty();
 								newQrCode.append(document.getElementById("canvas"));
 							}
 						});
-						$('#direktt_cross_sell_qr_code_bg_color').wpColorPicker({
+						$( '#direktt_cross_sell_qr_code_bg_color' ).wpColorPicker({
 							change: function(event, ui) {
 								let color = ui.color.toString();
 
@@ -725,9 +728,9 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 									height: 350,
 									type: "svg",
 									data: '<?php echo $actionObject; ?>',
-									image: $('#direktt_cross_sell_qr_code_image').val() ? $('#direktt_cross_sell_qr_code_image').val() : '',
+									image: $( '#direktt_cross_sell_qr_code_image' ).val() ? $( '#direktt_cross_sell_qr_code_image' ).val() : '',
 									dotsOptions: {
-										color: $('#direktt_cross_sell_qr_code_color').val() ? $('#direktt_cross_sell_qr_code_color').val() : '#000000',
+										color: $( '#direktt_cross_sell_qr_code_color' ).val() ? $( '#direktt_cross_sell_qr_code_color' ).val() : '#000000',
 										type: "rounded"
 									},
 									backgroundOptions: {
@@ -739,8 +742,8 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 									}
 								});
 
-								$('#canvas').empty();
-								newQrCode.append(document.getElementById("canvas"));
+								$( '#canvas' ).empty();
+								newQrCode.append( document.getElementById( "canvas" ) );
 							}
 						});
 					});
@@ -789,21 +792,21 @@ function direktt_cross_sell_partners_render_reports_meta_box( $post ) {
 	<script>
 		jQuery(document).ready(function($) {
 			// toggle custom date inputs
-			$('#direktt-report-range').on('change', function() {
-				if ($(this).val() === 'custom') {
-					$('#direktt-custom-dates').show();
+			$( '#direktt-report-range' ).on('change', function() {
+				if ( $( this ).val() === 'custom' ) {
+					$( '#direktt-custom-dates' ).show();
 				} else {
-					$('#direktt-custom-dates').hide();
+					$( '#direktt-custom-dates' ).hide();
 				}
 			});
 
 			// helper to collect data
 			function collectReportData(type) {
-				var post_id = $('#direktt-post-id').val();
-				var nonce = $('input[name="direktt_reports_meta_box_nonce"]').val();
-				var range = $('#direktt-report-range').val();
-				var from = $('#direktt-date-from').val();
-				var to = $('#direktt-date-to').val();
+				var post_id = $( '#direktt-post-id' ).val();
+				var nonce = $( 'input[name="direktt_reports_meta_box_nonce"]' ).val();
+				var range = $( '#direktt-report-range' ).val();
+				var from = $( '#direktt-date-from' ).val();
+				var to = $( '#direktt-date-to' ).val();
 
 				var ajaxData = {
 					action: type === 'issued' ? 'direktt_cross_sell_get_issued_report' : 'direktt_cross_sell_get_used_report',
@@ -812,7 +815,7 @@ function direktt_cross_sell_partners_render_reports_meta_box( $post ) {
 					nonce: nonce
 				};
 
-				if (range === 'custom') {
+				if ( range === 'custom' ) {
 					ajaxData.from = from;
 					ajaxData.to = to;
 				}
@@ -821,59 +824,59 @@ function direktt_cross_sell_partners_render_reports_meta_box( $post ) {
 			}
 
 			// Bind buttons
-			$('#direktt-generate-issued').on('click', function() {
+			$( '#direktt-generate-issued' ).off( 'click' ).on( 'click', function( event ) {
 				event.preventDefault();
-				var data = collectReportData('issued');
+				var data = collectReportData( 'issued' );
 				// Basic client-side validation for custom range
-				if (data.range === 'custom') {
-					if (!data.from || !data.to) {
+				if ( data.range === 'custom' ) {
+					if ( ! data.from || ! data.to ) {
 						alert("<?php echo esc_js( __( 'Please select both From and To dates for a custom range.', 'direktt-cross-sell' ) ); ?>");
 						return;
 					}
-					if (data.from > data.to) {
+					if ( data.from > data.to ) {
 						alert("<?php echo esc_js( __( 'The From date cannot be later than the To date.', 'direktt-cross-sell' ) ); ?>");
 						return;
 					}
 				}
 
-				$(this).prop('disabled', true);
-				$(this).text("<?php echo esc_js( __( 'Generating report...', 'direktt-cross-sell' ) ); ?>");
+				$( this ).prop( 'disabled', true );
+				$( this ).text( "<?php echo esc_js( __( 'Generating report...', 'direktt-cross-sell' ) ); ?>" );
 				$.ajax({
 					url: '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>',
 					method: 'POST',
 					data: data,
-					success: function(response) {
-						if (response.success) {
+					success: function( response ) {
+						if ( response.success ) {
 							window.location.href = response.data.url;
 						} else {
-							alert(response.data);
+							alert( response.data );
 						}
 					},
 					error: function() {
 						alert("<?php echo esc_js( __( 'There was an error.', 'direktt-cross-sell' ) ); ?>");
 					}
 				}).always(function() {
-					$('#direktt-generate-issued').prop('disabled', false);
-					$('#direktt-generate-issued').text("<?php echo esc_js( __( 'Generate Issued Report', 'direktt-cross-sell' ) ); ?>");
+					$( '#direktt-generate-issued' ).prop( 'disabled', false );
+					$( '#direktt-generate-issued' ).text( "<?php echo esc_js( __( 'Generate Issued Report', 'direktt-cross-sell' ) ); ?>" );
 				});
 			});
 
-			$('#direktt-generate-used').on('click', function() {
+			$( '#direktt-generate-used' ).off( 'click' ).on( 'click', function( event ) {
 				event.preventDefault();
-				var data = collectReportData('used');
-				if (data.range === 'custom') {
-					if (!data.from || !data.to) {
-						alert("<?php echo esc_js( __( 'Please select both From and To dates for a custom range.', 'direktt-cross-sell' ) ); ?>");
+				var data = collectReportData( 'used' );
+				if ( data.range === 'custom' ) {
+					if ( ! data.from || ! data.to ) {
+						alert( "<?php echo esc_js( __( 'Please select both From and To dates for a custom range.', 'direktt-cross-sell' ) ); ?>" );
 						return;
 					}
-					if (data.from > data.to) {
-						alert("<?php echo esc_js( __( 'The From date cannot be later than the To date.', 'direktt-cross-sell' ) ); ?>");
+					if ( data.from > data.to ) {
+						alert( "<?php echo esc_js( __( 'The From date cannot be later than the To date.', 'direktt-cross-sell' ) ); ?>" );
 						return;
 					}
 				}
 
-				$(this).prop('disabled', true);
-				$(this).text("<?php echo esc_js( __( 'Generating report...', 'direktt-cross-sell' ) ); ?>");
+				$( this ).prop( 'disabled', true );
+				$( this ).text( "<?php echo esc_js( __( 'Generating report...', 'direktt-cross-sell' ) ); ?>" );
 				$.ajax({
 					url: '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>',
 					method: 'POST',
@@ -889,8 +892,8 @@ function direktt_cross_sell_partners_render_reports_meta_box( $post ) {
 						alert("<?php echo esc_js( __( 'There was an error.', 'direktt-cross-sell' ) ); ?>");
 					}
 				}).always(function() {
-					$('#direktt-generate-used').prop('disabled', false);
-					$('#direktt-generate-used').text("<?php echo esc_js( __( 'Generate Used Report', 'direktt-cross-sell' ) ); ?>");
+					$( '#direktt-generate-used' ).prop( 'disabled', false );
+					$( '#direktt-generate-used' ).text( "<?php echo esc_js( __( 'Generate Used Report', 'direktt-cross-sell' ) ); ?>" );
 				});
 			});
 		});
@@ -1734,15 +1737,36 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
 
 		if ( ! $disable_use && empty( $status_message ) ) {
 			?>
-			<form method="post" action="" onsubmit="return direkttCSConfirmCouponUse('<?php echo esc_js( $group_title ); ?>');">
+			<form method="post" action="">
+                <?php
+                echo Direktt_Public::direktt_render_confirm_popup( 'direktt-cross-sell-confirm-use', __( 'Are you sure that you want to use this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $group_title ) . '?' );
+                echo Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) );
+                ?>
 				<input type="hidden" name="direktt_cs_use_coupon_nonce" value="<?php echo esc_attr( wp_create_nonce( 'direktt_cs_use_coupon_action' ) ); ?>">
-				<input type="submit" name="direktt_cs_use_coupon" class="button button-primary" value="<?php echo esc_attr__( 'Use Coupon', 'direktt-cross-sell' ); ?>">
+				<input type="button" name="direktt_cs_use_coupon_btn" class="button button-primary" value="<?php echo esc_attr__( 'Use Coupon', 'direktt-cross-sell' ); ?>">
 			</form>
 			<script>
-				function direkttCSConfirmCouponUse(title) {
-					return true; // TODO Disable confirmation for now
-					return window.confirm('<?php echo esc_js( __( 'Are you sure you want to use this coupon for: ', 'direktt-cross-sell' ) ); ?>' + title + '?');
-				}
+                jQuery( document ).ready( function($) {
+                    $( 'input[name="direktt_cs_use_coupon_btn"]' ).off( 'click' ).on( 'click', function(e) {
+                        e.preventDefault();
+                        $( '#direktt-cross-sell-confirm-use' ).fadeIn();
+                    });
+
+                    $( '#direktt-cross-sell-confirm-use .direktt-popup-no' ).off( 'click' ).on( 'click', function() {
+                        event.preventDefault();
+                        $( '#direktt-cross-sell-confirm-use' ).fadeOut();
+                    });
+
+                    $( '#direktt-cross-sell-confirm-use .direktt-popup-yes' ).off( 'click' ).on( 'click', function() {
+                        event.preventDefault();
+                        $( '#direktt-cross-sell-confirm-use' ).fadeOut();
+                        $( '.direktt-loader-overlay' ).fadeIn();
+                        $( 'form' ).append( '<input type="hidden" name="direktt_cs_use_coupon" value="1">' );
+                        setTimeout(function() {
+                            $( 'form' ).submit();
+                        }, 500);
+                    });
+                });
 			</script>
 			<?php
 		} elseif ( $is_expired ) {
@@ -1837,24 +1861,51 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
 				<li>
 					<div class="direktt-cross-sell-title-area">
 						<div class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></div>
-						<div class="direktt-cross-sell-data">Issued: <span><?php echo direktt_cross_sell_get_issue_count( $group->ID, $partner_id ); ?></span> / <strong><?php echo $issue_label; ?></strong></div>
+						<div class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo direktt_cross_sell_get_issue_count( $group->ID, $partner_id ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo $issue_label; ?></strong></div>
 					</div>
-					<form method="post" action="" style="display:inline;" class="direktt-cs-issue-form" onsubmit="return direkttCSConfirmIssue('<?php echo esc_js( $group->post_title ); ?>');">
+					<form method="post" action="" style="display:inline;" class="direktt-cs-issue-form">
+                        <?php
+                        echo Direktt_Public::direktt_render_confirm_popup( '', __( 'Are you sure that you want to issue this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $group->post_title ) . '?' );
+                        ?>
 						<input type="hidden" name="direktt_coupon_group_id" value="<?php echo esc_attr( $group->ID ); ?>">
 						<input type="hidden" name="direktt_cs_issue_coupon_nonce" value="<?php echo esc_attr( wp_create_nonce( 'direktt_cs_issue_coupon_action' ) ); ?>">
-						<input type="submit" name="direktt_cs_issue_coupon" class="button button-primary button-large" value="<?php echo esc_attr__( 'Issue', 'direktt-cross-sell' ); ?>">
+						<input type="submit" name="direktt_cs_issue_coupon_btn" class="button button-primary button-large" value="<?php echo esc_attr__( 'Issue', 'direktt-cross-sell' ); ?>">
 					</form>
 				</li>
 				<?php
 			}
 			?>
 		</ul>
-		<script>
-			function direkttCSConfirmIssue(title) {
-				return true; // TODO Disable confirmation for now
-				return window.confirm('<?php echo esc_js( __( 'Are you sure you want to issue a coupon for: ', 'direktt-cross-sell' ) ); ?>' + title + '?');
-			}
-		</script>
+        <?php
+        echo Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) );
+        ?>
+        <script>
+            jQuery( document ).ready( function ($) {
+                $( 'input[name="direktt_cs_issue_coupon_btn"]' ).off( 'click' ).on( 'click', function (e) {
+                    e.preventDefault();
+                    var $form = $( this ).closest( 'form' );
+                    var $popup = $form.find( '.direktt-confirm-popup' );
+                    var $loader = $( '.direktt-loader-overlay' );
+
+                    $popup.fadeIn();
+
+                    $popup.find( '.direktt-popup-yes' ).off( 'click' ).on( 'click', function () {
+                        event.preventDefault();
+                        $popup.fadeOut();
+                        $loader.fadeIn();
+                        $form.append( '<input type="hidden" name="direktt_cs_issue_coupon" value="1">' );
+                        setTimeout(function() {
+                            $form.submit();
+                        }, 500);
+                    });
+
+                    $popup.find( '.direktt-popup-no' ).off( 'click' ).on( 'click', function () {
+                        event.preventDefault();
+                        $popup.fadeOut();
+                    });
+                });
+            });
+        </script>
 		<?php
 	}
 	echo '<a href="' . esc_url( remove_query_arg( array( 'direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag' ) ) ) . '" class="button button-invert direktt-cross-sell-back">' . esc_html__( 'Back to Cross-Sell', 'direktt-cross-sell' ) . '</a>';
@@ -2095,23 +2146,46 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 					echo '<a class="button button-primary" href="' . esc_url( $use_url ) . '">' . esc_html__( 'Use', 'direktt-cross-sell' ) . '</a>';
 				echo '</td>';
 				echo '<td colspan="3">';
-					echo '<form method="post" action="' . $invalidate_url . '" class="direktt-cross-sell-invalidate-form" onsubmit="return direkttCSConfirmInvalidate(\'' . esc_js( $group_title ) . '\', \'' . esc_js( $issued ) . '\');">';
+					echo '<form method="post" action="' . $invalidate_url . '" class="direktt-cross-sell-invalidate-form">';
+                    echo Direktt_Public::direktt_render_confirm_popup( '', __( 'Are you sure that you want to issue this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $group_title ) . ' (' . esc_html__( 'Issued:', 'direktt-cross-sell' ) . ' ' . $issued . '?' );
 					echo '<input type="hidden" name="direktt_cs_invalidate_coupon_nonce" value="' . esc_attr( wp_create_nonce( 'direktt_cs_invalidate_coupon_action' ) ) . '">';
 					echo '<input type="hidden" name="invalid_coupon_id" value="' . esc_attr( $row->ID ) . '">';
-					echo '<input type="submit" name="direktt_cs_invalidate_coupon" class="button button-red button-invert" value="' . esc_attr__( 'Invalidate', 'direktt-cross-sell' ) . '">';
+					echo '<input type="submit" name="direktt_cs_invalidate_coupon_btn" class="button button-red button-invert" value="' . esc_attr__( 'Invalidate', 'direktt-cross-sell' ) . '">';
 					echo '</form>';
 				echo '</td>';
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
 	}
+    echo Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) );
 	?>
-	<script>
-		function direkttCSConfirmInvalidate(title, issued) {
-			return true; // TODO Disable confirmation for now
-			return window.confirm('<?php echo esc_js( __( 'Are you sure you want to invalidate this coupon for: ', 'direktt-cross-sell' ) ); ?>' + title + ' (Issued: ' + issued + ')?');
-		}
-	</script>
+    <script>
+        jQuery( document ).ready( function ($) {
+            $( 'input[name="direktt_cs_invalidate_coupon_btn"]' ).off( 'click' ).on( 'click', function (e) {
+                e.preventDefault();
+                var $form = $( this ).closest( 'form' );
+                var $popup = $form.find( '.direktt-confirm-popup' );
+                var $loader = $( '.direktt-loader-overlay' );
+
+                $popup.fadeIn();
+
+                $popup.find( '.direktt-popup-yes' ).off( 'click' ).on( 'click', function () {
+                    event.preventDefault();
+                    $popup.fadeOut();
+                    $loader.fadeIn();
+                    $form.append( '<input type="hidden" name="direktt_cs_invalidate_coupon" value="1">' );
+                    setTimeout(function() {
+                        $form.submit();
+                    }, 500);
+                });
+
+                $popup.find( '.direktt-popup-no' ).off( 'click' ).on( 'click', function () {
+                    event.preventDefault();
+                    $popup.fadeOut();
+                });
+            });
+        });
+    </script>
 	<?php
 }
 
@@ -2339,8 +2413,19 @@ function direktt_cross_sell_user_can_validate( $partner_id ) {
 	return false;
 }
 
+function direktt_cross_sell_enqueue_popup_styles() {
+    global $direktt_cs_enqueue_popup_styles;
+    if ( $direktt_cs_enqueue_popup_styles ) {
+        wp_enqueue_script( 'jquery' );
+        wp_enqueue_style( 'direktt-cross-sell-popup', plugin_dir_url( __FILE__ ) . 'assets/css/direktt-profile.css', array(), '1.0.0' );
+    }
+}
+
 function direktt_cross_sell_coupon_validation() {
 	global $wpdb;
+
+    global $direktt_cs_enqueue_popup_styles;
+    $direktt_cs_enqueue_popup_styles = true;
 
 	if ( isset( $_GET['coupon_code'] ) ) {
 		$coupon_code     = sanitize_text_field( $_GET['coupon_code'] );
@@ -2453,15 +2538,36 @@ function direktt_cross_sell_coupon_validation() {
 		// Show "Use Coupon" button with JS confirm, if allowed
 		if ( ! $disable_use ) {
 			?>
-			<form method="post" action="" onsubmit="return direkttCSConfirmCouponUse('<?php echo esc_js( $coupon_group_post ? $coupon_group_post->post_title : 'Coupon' ); ?>');">
+			<form method="post" action="">
+                <?php
+                echo Direktt_Public::direktt_render_confirm_popup( 'direktt-cross-sell-confirm-use', __( 'Are you sure that you want to use this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $coupon_group_post->post_title ) . '?' );
+                echo Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) );
+                ?>
 				<input type="hidden" name="direktt_cs_use_coupon_nonce" value="<?php echo esc_attr( wp_create_nonce( 'direktt_cs_use_coupon_action' ) ); ?>">
-				<input type="submit" name="direktt_cs_use_coupon" class="button button-primary" value="<?php echo esc_attr__( 'Use Coupon', 'direktt-cross-sell' ); ?>">
+				<input type="button" name="direktt_cs_use_coupon_btn" class="button button-primary" value="<?php echo esc_attr__( 'Use Coupon', 'direktt-cross-sell' ); ?>">
 			</form>
 			<script>
-				function direkttCSConfirmCouponUse(title) {
-					return true; // TODO Disable confirmation for now
-					return window.confirm('<?php echo esc_js( __( 'Are you sure you want to use this coupon for: ', 'direktt-cross-sell' ) ); ?>' + title + '?');
-				}
+                jQuery( document ).ready( function($) {
+                    $( 'input[name="direktt_cs_use_coupon_btn"]' ).off( 'click' ).on( 'click', function(e) {
+                        e.preventDefault();
+                        $( '#direktt-cross-sell-confirm-use' ).fadeIn();
+                    });
+
+                    $( '#direktt-cross-sell-confirm-use .direktt-popup-no' ).off( 'click' ).on( 'click', function() {
+                        event.preventDefault();
+                        $( '#direktt-cross-sell-confirm-use' ).fadeOut();
+                    });
+
+                    $( '#direktt-cross-sell-confirm-use .direktt-popup-yes' ).off( 'click' ).on( 'click', function() {
+                        event.preventDefault();
+                        $( '#direktt-cross-sell-confirm-use' ).fadeOut();
+                        $( '.direktt-loader-overlay' ).fadeIn();
+                        $( 'form' ).append( '<input type="hidden" name="direktt_cs_use_coupon" value="1">' );
+                        setTimeout(function() {
+                            $( 'form' ).submit();
+                        }, 500);
+                    });
+                });
 			</script>
 			<?php
 		} elseif ( $is_expired ) {
@@ -2477,6 +2583,8 @@ function direktt_cross_sell_coupon_validation() {
 function direktt_cross_sell_process_coupon_invalidate() {
 	global $wpdb;
 	$table = $wpdb->prefix . 'direktt_cross_sell_issued';
+
+    global $direktt_user;
 
 	if (
 		isset( $_POST['direktt_cs_invalidate_coupon'] ) &&
@@ -2796,7 +2904,7 @@ function direktt_cross_sell_user_tool() {
 					<li>
 						<div class="direktt-cross-sell-title-area">
 							<div class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></div>
-							<div class="direktt-cross-sell-data">Issued: <span><?php echo direktt_cross_sell_get_issue_count( $group->ID, $partner_id ); ?></span> / <strong><?php echo $issue_label; ?></strong></div>
+							<div class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo direktt_cross_sell_get_issue_count( $group->ID, $partner_id ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo $issue_label; ?></strong></div>
 						</div>
 						<form method="post" action="" style="display:inline;" class="direktt-cs-issue-form">
 							<input type="hidden" name="direktt_coupon_group_id" value="<?php echo esc_attr( $group->ID ); ?>">
