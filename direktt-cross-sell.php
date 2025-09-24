@@ -1707,10 +1707,10 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
 		echo '<h2>' . esc_html__( 'Use Coupon', 'direktt-cross-sell' ) . '</h2>';
 		echo '<table class="direktt-profile-data-cross-sell-tool-single-coupon-table">';
 		echo '<tbody>';
-		echo '<tr><th>' . esc_html__( 'Partner Name', 'direktt-cross-sell' ) . '</th><td>' . $partner_name . '</td></tr>';
-		echo '<tr><th>' . esc_html__( 'Coupon Title', 'direktt-cross-sell' ) . '</th><td>' . $group_title . '</td></tr>';
+		echo '<tr><th>' . esc_html__( 'Partner', 'direktt-cross-sell' ) . '</th><td><h3>' . $partner_name . '</h3></td></tr>';
+		echo '<tr><th>' . esc_html__( 'Coupon', 'direktt-cross-sell' ) . '</th><td>' . $group_title . '</td></tr>';
 		echo '<tr><th>' . esc_html__( 'Description', 'direktt-cross-sell' ) . '</th><td>' . $group_descr . '</td></tr>';
-		echo '<tr><th>' . esc_html__( 'Issued At', 'direktt-cross-sell' ) . '</th><td>' . $issued_date . '</td></tr>';
+		echo '<tr><th>' . esc_html__( 'Issued at', 'direktt-cross-sell' ) . '</th><td>' . $issued_date . '</td></tr>';
 		echo '<tr><th>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</th><td>' . $expires . '</td></tr>';
 
 		echo '<tr><th>' . esc_html__( 'Usages', 'direktt-cross-sell' ) . '</th><td>';
@@ -1987,6 +1987,7 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 	}
 
 	// 3. Output Coupons
+	echo '<div class="direktt-cross-sell-issued-coupons-div">';
 	echo '<h3>' . esc_html__( 'Issued Coupons', 'direktt-cross-sell' ) . '</h3>';
 
 	$filtered_coupon_results = array();
@@ -2111,6 +2112,7 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 		}
 		echo '</tbody></table>';
 	}
+	echo '</div>';
 	?>
 	<script>
 		function direkttCSConfirmInvalidate(title, issued) {
