@@ -634,7 +634,7 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 			<tr>
 				<th scope="row"><label for="direktt_cross_sell_qr_code_bg_color"><?php echo esc_html__( 'QR Code Preview', 'direktt-cross-sell' ); ?></label></th>
 				<td>
-					<div id="canvas"></div>
+					<div id="direktt-cross-sell-qr-canvas"></div>
 					<?php
 					$actionObject = json_encode(
 						array(
@@ -669,7 +669,7 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 							}
 						});
 
-						qrCode.append(document.getElementById("canvas"));
+						qrCode.append(document.getElementById("direktt-cross-sell-qr-canvas"));
 
 						jQuery(document).ready(function($) {
 							$('#direktt_cross_sell_qr_code_image').on('change', function() {
@@ -692,8 +692,8 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 									}
 								});
 
-								$( '#canvas' ).empty();
-								newQrCode.append( document.getElementById( "canvas" ) );
+								$( '#direktt-cross-sell-qr-canvas' ).empty();
+								newQrCode.append( document.getElementById( "direktt-cross-sell-qr-canvas" ) );
 							});
 							$( '#direktt_cross_sell_qr_code_color' ).wpColorPicker({
 								change: function( event, ui ) {
@@ -718,8 +718,8 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 										}
 									});
 
-									$( '#canvas' ).empty();
-									newQrCode.append( document.getElementById( "canvas" ) );
+									$( '#direktt-cross-sell-qr-canvas' ).empty();
+									newQrCode.append( document.getElementById( "direktt-cross-sell-qr-canvas" ) );
 								}
 							});
 							$( '#direktt_cross_sell_qr_code_bg_color' ).wpColorPicker({
@@ -745,8 +745,8 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 										}
 									});
 
-									$( '#canvas' ).empty();
-									newQrCode.append( document.getElementById( "canvas" ) );
+									$( '#direktt-cross-sell-qr-canvas' ).empty();
+									newQrCode.append( document.getElementById( "direktt-cross-sell-qr-canvas" ) );
 								}
 							});
 						});
@@ -2734,7 +2734,7 @@ function direktt_cross_sell_user_tool() {
 
         <p class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></p>
         <p class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></p>
-		<div id="canvas"></div>
+		<div id="direktt-cross-sell-qr-canvas"></div>
         <p class="direktt-cross-sell-content"><?php echo nl2br( wp_kses_post( $coupon_group_post->post_content ) ); ?></p>
 		<script type="text/javascript">
 			const qrCode = new QRCodeStyling({
@@ -2823,11 +2823,11 @@ function direktt_cross_sell_user_tool() {
 
 			?>
 
-            <h2 class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></h2>
-            <h3 class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></h3>
-			<div id="canvas"></div>
+            <div class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></div>
+            <h2 class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></h2>
+			<div id="direktt-cross-sell-qr-canvas"></div>
             <p class="direktt-cross-sell-content"><?php echo nl2br( wp_kses_post( $coupon_group_post->post_content ) ); ?></p>
-			<button id="share"><?php echo esc_html__( 'Share', 'direktt-cross-sell' ); ?></button>
+			<button id="direktt-cross-sell-share" class="ditektt-button button-large"><?php echo esc_html__( 'Share', 'direktt-cross-sell' ); ?></button>
 			<script type="text/javascript">
 				const qrCode = new QRCodeStyling({
 					width: 350,
@@ -2848,15 +2848,15 @@ function direktt_cross_sell_user_tool() {
 					}
 				});
 
-				qrCode.append(document.getElementById("canvas"));
+				qrCode.append(document.getElementById("direktt-cross-sell-qr-canvas"));
 
-				document.getElementById("share").addEventListener("click", async () => {
+				document.getElementById("direktt-cross-sell-share").addEventListener("click", async () => {
 					qrCode.getRawData("png").then(async (blob) => {
 						const img = new Image();
 						img.onload = async () => {
 							const margin = 20; // margin in pixels
 							const bgColor = '<?php echo $qr_code_bg_color ? esc_js( $qr_code_bg_color ) : '#ffffff'; ?>';
-							const canvas = document.createElement("canvas");
+							const canvas = document.createElement("direktt-cross-sell-qr-canvas");
 							canvas.width = img.width + margin * 2;
 							canvas.height = img.height + margin * 2;
 							const ctx = canvas.getContext("2d");
