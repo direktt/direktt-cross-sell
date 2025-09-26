@@ -2286,7 +2286,7 @@ function direktt_cross_sell_my_coupons() {
 		echo '<th>' . esc_html__( 'Issued', 'direktt-cross-sell' ) . '</th>';
 		echo '<th>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</th>';
 		echo '<th>' . esc_html__( 'Used', 'direktt-cross-sell' ) . '</th>';
-		echo '<th>' . esc_html__( 'View coupon', 'direktt-cross-sell' ) . '</th>';
+		echo '<th>' . esc_html__( 'Action', 'direktt-cross-sell' ) . '</th>';
 		echo '</tr></thead><tbody>';
 
 		foreach ( $filtered_coupon_results as $row ) {
@@ -2330,7 +2330,7 @@ function direktt_cross_sell_my_coupons() {
 					'coupon_id'      => $row->ID,
 				)
 			);
-			echo '<td><a href="' . esc_url( $coupon_url ) . '">' . esc_html__( 'View Coupon', 'direktt-cross-sell' ) . '</a></td>';
+			echo '<td><a href="' . esc_url( $coupon_url ) . '" class="direktt-button">' . esc_html__( 'View', 'direktt-cross-sell' ) . '</a></td>';
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
@@ -2538,7 +2538,8 @@ function direktt_cross_sell_coupon_validation() {
 		// --- Output ---
 		ob_start();
 		echo '<div id="direktt-profile-wrapper">';
-		echo '<div id="direktt-profile" class="direktt-cross-sell-tool direktt-cross-sell-tool-service">';
+		echo '<div id="direktt-profile">';
+		echo '<div id="direktt-profiledata" class="direktt-cross-sell-tool direktt-cross-service">';
 		echo $notice;
 		direktt_cross_sell_display_coupon_info_table(
 			array(
@@ -2591,6 +2592,7 @@ function direktt_cross_sell_coupon_validation() {
 		} elseif ( $disable_use ) {
 			echo '<p><em>' . esc_html__( 'This coupon has reached its usage limit.', 'direktt-cross-sell' ) . '</em></p>';
 		}
+		echo '</div>';
 		echo '</div>';
 		echo '</div>';
 		return ob_get_clean();
@@ -2684,10 +2686,8 @@ function direktt_cross_sell_user_tool() {
 
         ob_start();
 		echo '<div id="direktt-profile-wrapper">';
-		echo '<div id="direktt-profile" class="direktt-cross-sell-tool direktt-cross-sell-tool-service">';
-        $back_url = remove_query_arg( array( 'coupon_id' ) );
-		$back_url = add_query_arg( 'direktt_action', 'my_coupons', $back_url );
-		echo '<a href="' . esc_url( $back_url ) . '">' . esc_html__( 'Back', 'direktt-cross-sell' ) . '</a>';
+		echo '<div id="direktt-profile">';
+		echo '<div id="direktt-profile-data" class="direktt-cross-sell-tool direktt-cross-service">';
 
 		if ( empty( $coupons ) ) {
 			echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
@@ -2736,9 +2736,8 @@ function direktt_cross_sell_user_tool() {
 		$enqueue_direktt_cross_sell_scripts = true;
 
 		?>
-
-        <p class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></p>
-        <p class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></p>
+		<div class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></div>
+		<h2 class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></h2>
 		<div class="direktt-cross-sell-qr-canvas-wrapper">
 			<div id="direktt-cross-sell-qr-canvas"></div>
 			<p class="direktt-cross-sell-content"><?php echo nl2br( wp_kses_post( $coupon_group_post->post_content ) ); ?></p>		
@@ -2772,6 +2771,10 @@ function direktt_cross_sell_user_tool() {
 		</script>
 
 		<?php
+        $back_url = remove_query_arg( array( 'coupon_id' ) );
+		$back_url = add_query_arg( 'direktt_action', 'my_coupons', $back_url );
+		echo '<a href="' . esc_url( $back_url ) . '" class="button button-invert direktt-cross-sell-back button-dark-gray">' . esc_html__( 'Back', 'direktt-cross-sell' ) . '</a>';
+		echo '</div>';
 		echo '</div>';
 		echo '</div>';
 		return ob_get_clean();
@@ -2781,7 +2784,7 @@ function direktt_cross_sell_user_tool() {
 		ob_start();
 		echo '<div id="direktt-profile-wrapper">';
 		echo '<div id="direktt-profile">';
-		echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-cross-sell-tool-service">';
+		echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service">';
 		$partner_id = intval( $_GET['direktt_partner_id'] );
 		if (
 			isset( $_POST['direktt_cs_issue_coupon'] ) &&
@@ -2962,8 +2965,8 @@ function direktt_cross_sell_user_tool() {
 
 	ob_start();
 	echo '<div id="direktt-profile-wrapper">';
-	echo '<div id="direktt-profile" class="direktt-profile-data-cross-sell-tool direktt-cross-sell-tool-service">';
-	echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-cross-sell-tool-service">';
+	echo '<div id="direktt-profile">';
+	echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service">';
 	echo direktt_cross_sell_my_coupons();
 	$partners          = direktt_cross_sell_get_partners();
 	$eligible_partners = array();
