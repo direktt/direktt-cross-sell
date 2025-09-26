@@ -2280,8 +2280,11 @@ function direktt_cross_sell_my_coupons() {
 	if ( empty( $filtered_coupon_results ) ) {
 		echo '<p>' . esc_html__( 'There are no active or valid coupons issued', 'direktt-cross-sell' ) . '</p>';
 	} else {
-		echo '<table><thead><tr>';
-		echo '<th>' . esc_html__( 'Coupon (Partner)', 'direktt-cross-sell' ) . '</th>';
+		echo '<table class="direktt-cross-sell-issued-coupons-table"><thead><tr>';		
+		echo '<th>';
+		echo '<strong>' . esc_html__( 'Partner', 'direktt-cross-sell' ) . '</strong>';
+		echo ' (' . esc_html__( 'Group', 'direktt-cross-sell' ) . ')';
+		echo '</th>';
 		echo '<th>' . esc_html__( 'Issued', 'direktt-cross-sell' ) . '</th>';
 		echo '<th>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</th>';
 		echo '<th>' . esc_html__( 'Used', 'direktt-cross-sell' ) . '</th>';
@@ -2318,7 +2321,7 @@ function direktt_cross_sell_my_coupons() {
 			$used_count = direktt_cross_sell_get_used_count( intval( $row->ID ) );
 
 			echo '<tr>';
-			echo '<td><strong>' . $group_title . '</strong><br/><i>' . $partner_name . '</i></td>';
+			echo '<td class="direktt-cross-sell-name"><strong>' . $group_title . '</strong><br/><i>' . $partner_name . '</i></td>';
 			echo '<td>' . human_time_diff( strtotime( $issued ) ) . ' ago</td>';
 			echo '<td>' . $expires . '</td>';
 			echo '<td>' . $used_count . ' / ' . ( $max_usage > 0 ? $max_usage : 'Unlimited' ) . '</td>';
@@ -2328,7 +2331,7 @@ function direktt_cross_sell_my_coupons() {
 					'coupon_id'      => $row->ID,
 				)
 			);
-			echo '<td><a href="' . esc_url( $coupon_url ) . '" class="direktt-button">' . esc_html__( 'View', 'direktt-cross-sell' ) . '</a></td>';
+			echo '<td><a href="' . esc_url( $coupon_url ) . '" class="direktt-button button-invert">' . esc_html__( 'View', 'direktt-cross-sell' ) . '</a></td>';
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
@@ -2360,7 +2363,7 @@ function direktt_cross_sell_display_coupon_info_table( $opts ) {
 	$group_title  = $coupon_group_post ? esc_html( $coupon_group_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
 	$group_descr  = $coupon_group_post ? esc_html( $coupon_group_post->post_content ) : '';
 
-	echo '<table class="form-table">';
+	echo '<table  class="direktt-cross-sell-issued-coupon-table">';
 	echo '<tr><th>' . esc_html__( 'Partner Name', 'direktt-cross-sell' ) . '</th><td>' . $partner_name . '</td></tr>';
 	echo '<tr><th>' . esc_html__( 'Coupon Title', 'direktt-cross-sell' ) . '</th><td>' . $group_title . '</td></tr>';
 	echo '<tr><th>' . esc_html__( 'Description', 'direktt-cross-sell' ) . '</th><td>' . $group_descr . '</td></tr>';
