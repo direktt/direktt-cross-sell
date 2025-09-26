@@ -70,6 +70,9 @@ add_action( 'pre_get_posts', 'direktt_cross_sell_sort_partner_column' );
 // Enqueue popup styles
 add_action( 'wp_enqueue_scripts', 'direktt_cross_sell_enqueue_popup_styles' );
 
+// highlight submenu when on partner/coupon group edit screen
+add_action( 'parent_file', 'direktt_cross_sell_highlight_submenu' );
+
 function direktt_cross_sell_activation_check() {
 	if ( ! function_exists( 'is_plugin_active' ) ) {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -3167,4 +3170,20 @@ function direktt_cross_sell_sort_partner_column( $query ) {
 		$query->set( 'meta_key', 'direktt_cross_sell_partner_for_coupon_group' );
 		$query->set( 'orderby', 'meta_value' );
 	}
+}
+
+function direktt_cross_sell_highlight_submenu( $parent_file ) {
+	global $submenu_file, $current_screen, $pagenow;
+
+	if ( $pagenow === 'post.php' || $pagenow === 'post-new.php' ) {
+		if ( $current_screen->post_type === 'direkttcspartners' ) {
+			$submenu_file  = 'edit.php?post_type=direkttcspartners';
+			$parent_file = 'direktt-dashboard';
+		} elseif ( $current_screen->post_type === 'direkttcscoupon' ) {
+			$submenu_file  = 'edit.php?post_type=direkttcscoupon';
+			$parent_file = 'direktt-dashboard';
+		}
+	}
+
+	return $parent_file;
 }
