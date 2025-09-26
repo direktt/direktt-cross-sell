@@ -2540,7 +2540,7 @@ function direktt_cross_sell_coupon_validation() {
 		ob_start();
 		echo '<div id="direktt-profile-wrapper">';
 		echo '<div id="direktt-profile">';
-		echo '<div id="direktt-profiledata" class="direktt-cross-sell-tool direktt-cross-service">';
+		echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service">';
 		echo $notice;
 		direktt_cross_sell_display_coupon_info_table(
 			array(
@@ -2688,7 +2688,7 @@ function direktt_cross_sell_user_tool() {
         ob_start();
 		echo '<div id="direktt-profile-wrapper">';
 		echo '<div id="direktt-profile">';
-		echo '<div id="direktt-profile-data" class="direktt-cross-sell-tool direktt-cross-service">';
+		echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service">';
 
 		if ( empty( $coupons ) ) {
 			echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
