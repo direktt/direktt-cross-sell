@@ -634,7 +634,9 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 			<tr>
 				<th scope="row"><label for="direktt_cross_sell_qr_code_bg_color"><?php echo esc_html__( 'QR Code Preview', 'direktt-cross-sell' ); ?></label></th>
 				<td>
-					<div id="direktt-cross-sell-qr-canvas"></div>
+					<div class="direktt-cross-sell-qr-canvas-wrapper">
+						<div id="direktt-cross-sell-qr-canvas"></div>
+					</div>
 					<?php
 					$actionObject = json_encode(
 						array(
@@ -2734,8 +2736,11 @@ function direktt_cross_sell_user_tool() {
 
         <p class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></p>
         <p class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></p>
-		<div id="direktt-cross-sell-qr-canvas"></div>
-        <p class="direktt-cross-sell-content"><?php echo nl2br( wp_kses_post( $coupon_group_post->post_content ) ); ?></p>
+		<div class="direktt-cross-sell-qr-canvas-wrapper">
+			<div id="direktt-cross-sell-qr-canvas"></div>
+			<p class="direktt-cross-sell-content"><?php echo nl2br( wp_kses_post( $coupon_group_post->post_content ) ); ?></p>		
+		</div>
+
 		<script type="text/javascript">
 			const qrCode = new QRCodeStyling({
 				width: 350,
@@ -2825,8 +2830,10 @@ function direktt_cross_sell_user_tool() {
 
             <div class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></div>
             <h2 class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></h2>
-			<div id="direktt-cross-sell-qr-canvas"></div>
-            <p class="direktt-cross-sell-content"><?php echo nl2br( wp_kses_post( $coupon_group_post->post_content ) ); ?></p>
+			<div class="direktt-cross-sell-qr-canvas-wrapper">
+				<div id="direktt-cross-sell-qr-canvas"></div>
+				<p class="direktt-cross-sell-content"><?php echo nl2br( wp_kses_post( $coupon_group_post->post_content ) ); ?></p>		
+			</div>
 			<button id="direktt-cross-sell-share" class="ditektt-button button-large"><?php echo esc_html__( 'Share', 'direktt-cross-sell' ); ?></button>
 			<script type="text/javascript">
 				const qrCode = new QRCodeStyling({
