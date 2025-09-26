@@ -2281,8 +2281,7 @@ function direktt_cross_sell_my_coupons() {
 		echo '<p>' . esc_html__( 'There are no active or valid coupons issued', 'direktt-cross-sell' ) . '</p>';
 	} else {
 		echo '<table><thead><tr>';
-		echo '<th>' . esc_html__( 'Partner Name', 'direktt-cross-sell' ) . '</th>';
-		echo '<th>' . esc_html__( 'Coupon Name', 'direktt-cross-sell' ) . '</th>';
+		echo '<th>' . esc_html__( 'Coupon (Partner)', 'direktt-cross-sell' ) . '</th>';
 		echo '<th>' . esc_html__( 'Issued', 'direktt-cross-sell' ) . '</th>';
 		echo '<th>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</th>';
 		echo '<th>' . esc_html__( 'Used', 'direktt-cross-sell' ) . '</th>';
@@ -2319,9 +2318,8 @@ function direktt_cross_sell_my_coupons() {
 			$used_count = direktt_cross_sell_get_used_count( intval( $row->ID ) );
 
 			echo '<tr>';
-			echo '<td>' . $partner_name . '</td>';
-			echo '<td>' . $group_title . '</td>';
-			echo '<td>' . $issued . '</td>';
+			echo '<td><strong>' . $group_title . '</strong><br/><i>' . $partner_name . '</i></td>';
+			echo '<td>' . human_time_diff( strtotime( $issued ) ) . ' ago</td>';
 			echo '<td>' . $expires . '</td>';
 			echo '<td>' . $used_count . ' / ' . ( $max_usage > 0 ? $max_usage : 'Unlimited' ) . '</td>';
 			$coupon_url = add_query_arg(
