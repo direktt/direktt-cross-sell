@@ -1755,7 +1755,7 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
                 echo Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) );
                 ?>
 				<input type="hidden" name="direktt_cs_use_coupon_nonce" value="<?php echo esc_attr( wp_create_nonce( 'direktt_cs_use_coupon_action' ) ); ?>">
-				<input type="button" name="direktt_cs_use_coupon_btn" class="button button-primary" value="<?php echo esc_attr__( 'Use Coupon', 'direktt-cross-sell' ); ?>">
+				<input type="button" name="direktt_cs_use_coupon_btn" class="button button-primary button-large" value="<?php echo esc_attr__( 'Use Coupon', 'direktt-cross-sell' ); ?>">
 			</form>
 			<script>
                 jQuery( document ).ready( function($) {
@@ -1783,9 +1783,9 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
 			<?php
 		} elseif ( $is_expired ) {
 			// Coupon expired message
-			echo '<p><em>' . esc_html__( 'This coupon has expired and cannot be used.', 'direktt-cross-sell' ) . '</em></p>';
+			echo '<p class="notice notice-error"><em>' . esc_html__( 'This coupon has expired and cannot be used.', 'direktt-cross-sell' ) . '</em></p>';
 		} elseif ( $disable_use ) {
-			echo '<p><em>' . esc_html__( 'This coupon has reached its usage limit.', 'direktt-cross-sell' ) . '</em></p>';
+			echo '<p class="notice notice-error"><em>' . esc_html__( 'This coupon has reached its usage limit.', 'direktt-cross-sell' ) . '</em></p>';
 		}
 
 		// Back
@@ -2015,7 +2015,7 @@ function direktt_cross_sell_render_partners() {
 					'direktt_action'     => 'view_partner_coupons',
 				)
 			);
-			echo '<li><a href="' . esc_url( $url ) . '" class="direktt-button button-large">' . esc_html( $partner['title'] ) . '</a></li>';
+			echo '<li><a href="' . esc_url( $url ) . '" class="direktt-button button-large button-primary">' . esc_html( $partner['title'] ) . '</a></li>';
 		}
 		echo '</ul>';
 	}
@@ -2156,7 +2156,7 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 						),
 						remove_query_arg( array( 'direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag' ) )
 					);
-					echo '<a class="button button-primary" href="' . esc_url( $use_url ) . '">' . esc_html__( 'Use', 'direktt-cross-sell' ) . '</a>';
+					echo '<a class="button" href="' . esc_url( $use_url ) . '">' . esc_html__( 'Use', 'direktt-cross-sell' ) . '</a>';
 				echo '</td>';
 				echo '<td colspan="3">';
 					echo '<form method="post" action="' . $invalidate_url . '" class="direktt-cross-sell-invalidate-form">';
@@ -2562,7 +2562,7 @@ function direktt_cross_sell_coupon_validation() {
                 echo Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) );
                 ?>
 				<input type="hidden" name="direktt_cs_use_coupon_nonce" value="<?php echo esc_attr( wp_create_nonce( 'direktt_cs_use_coupon_action' ) ); ?>">
-				<input type="button" name="direktt_cs_use_coupon_btn" class="button button-primary" value="<?php echo esc_attr__( 'Use Coupon', 'direktt-cross-sell' ); ?>">
+				<input type="button" name="direktt_cs_use_coupon_btn" class="button button-primary button-large" value="<?php echo esc_attr__( 'Use Coupon', 'direktt-cross-sell' ); ?>">
 			</form>
 			<script>
                 jQuery( document ).ready( function($) {
