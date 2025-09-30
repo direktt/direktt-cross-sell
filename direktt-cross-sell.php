@@ -2960,7 +2960,7 @@ function direktt_cross_sell_user_tool() {
 						img.onload = async () => {
 							const margin = 20; // margin in pixels
 							const bgColor = '<?php echo $qr_code_bg_color ? esc_js( $qr_code_bg_color ) : '#ffffff'; ?>';
-							const canvas = document.createElement("direktt-cross-sell-qr-canvas");
+							const canvas = document.createElement("canvas");
 							canvas.width = img.width + margin * 2;
 							canvas.height = img.height + margin * 2;
 							const ctx = canvas.getContext("2d");
