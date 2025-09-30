@@ -1712,7 +1712,7 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
 
 		$partner_name = $partner_post ? esc_html( $partner_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
 		$group_title  = $coupon_group_post ? esc_html( $coupon_group_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
-		$group_descr  = $coupon_group_post ? wp_kses_post( $coupon_group_post->post_content ) : '';
+		$group_descr  = $coupon_group_post ? nl2br ( wp_kses_post( $coupon_group_post->post_content ) ) : '';
 
 		// Expiry/issuance formatting
 		$issued_date = esc_html( mysql2date( 'Y-m-d H:i:s', $coupon->coupon_time ) );
@@ -1886,7 +1886,7 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
 
 	$partner = get_post( $partner_id );
 	if ( ! $partner || $partner->post_type !== 'direkttcspartners' || $partner->post_status !== 'publish' ) {
-		echo '<p>' . esc_html__( 'Invalid partner selected.', 'direktt-cross-sell' ) . '</p>';
+		echo '<p class="notice notice-error">' . esc_html__( 'Invalid partner selected.', 'direktt-cross-sell' ) . '</p>';
 		$back_url = remove_query_arg( array( 'direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag' ) );
 		echo '<a href="' . esc_url( $back_url ) . '" class="button button-invert direktt-cross-sell-back button-dark-gray">' . esc_html__( 'Back to Cross-Sell', 'direktt-cross-sell' ) . '</a>';
 		return;
@@ -1897,7 +1897,7 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
 	$groups = direktt_cross_sell_get_partner_coupon_groups( $partner_id );
 
 	if ( empty( $groups ) ) {
-		echo '<p>' . esc_html__( 'No Coupon Groups for this partner.', 'direktt-cross-sell' ) . '</p>';
+		echo '<p class="notice notice-error">' . esc_html__( 'No Coupon Groups for this partner.', 'direktt-cross-sell' ) . '</p>';
 	} else {
 		?>
 		<ul class="direktt-cross-sell-partner-list">
@@ -2042,7 +2042,7 @@ function direktt_cross_sell_render_partners() {
 	echo '<h2>' . esc_html__( 'Issue New Coupons', 'direktt-cross-sell' ) . '</h2>';
 
 	if ( empty( $partners ) ) {
-		echo '<p>' . esc_html__( 'No Partners with Coupons Found.', 'direktt-cross-sell' ) . '</p>';
+		echo '<p class="notice notice-error">' . esc_html__( 'No Partners with Coupons Found.', 'direktt-cross-sell' ) . '</p>';
 	} else {
 		echo '<ul>';
 
@@ -2128,7 +2128,7 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 	}
 
 	if ( empty( $filtered_coupon_results ) ) {
-		echo '<p>' . esc_html__( 'No active or valid coupons issued to this user.', 'direktt-cross-sell' ) . '</p>';
+		echo '<p class="notice notice-error">' . esc_html__( 'No active or valid coupons issued to this user.', 'direktt-cross-sell' ) . '</p>';
 	} else {
 		echo '<table class="direktt-cross-sell-issued-coupons-table"><thead><tr>';
 		echo '<th>';
@@ -2316,7 +2316,7 @@ function direktt_cross_sell_my_coupons() {
 	}
 
 	if ( empty( $filtered_coupon_results ) ) {
-		echo '<p>' . esc_html__( 'There are no active or valid coupons issued', 'direktt-cross-sell' ) . '</p>';
+		echo '<p class="notice notice-error">' . esc_html__( 'There are no active or valid coupons issued', 'direktt-cross-sell' ) . '</p>';
 	} else {
 		echo '<table class="direktt-cross-sell-issued-coupons-table"><thead><tr>';		
 		echo '<th>';
@@ -2399,21 +2399,25 @@ function direktt_cross_sell_display_coupon_info_table( $opts ) {
 
 	$partner_name = $partner_post ? esc_html( $partner_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
 	$group_title  = $coupon_group_post ? esc_html( $coupon_group_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
-	$group_descr  = $coupon_group_post ? esc_html( $coupon_group_post->post_content ) : '';
-
+	$group_descr  = $coupon_group_post ? wp_kses_post( $coupon_group_post->post_content ) : '';
+	
+	echo '<h3>' . $group_title . '</h3>';
 	echo '<table  class="direktt-cross-sell-issued-coupon-table">';
-	echo '<tr><th>' . esc_html__( 'Partner Name', 'direktt-cross-sell' ) . '</th><td>' . $partner_name . '</td></tr>';
-	echo '<tr><th>' . esc_html__( 'Coupon Title', 'direktt-cross-sell' ) . '</th><td>' . $group_title . '</td></tr>';
-	echo '<tr><th>' . esc_html__( 'Description', 'direktt-cross-sell' ) . '</th><td>' . $group_descr . '</td></tr>';
-	echo '<tr><th>' . esc_html__( 'Issued At', 'direktt-cross-sell' ) . '</th><td>' . $issued_date . '</td></tr>';
-	echo '<tr><th>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</th><td>' . $expires . '</td></tr>';
-	echo '<tr><th>' . esc_html__( 'Usages', 'direktt-cross-sell' ) . '</th><td>';
-	printf(
-		esc_html__( '%1$s / %2$s', 'direktt-cross-sell' ),
-		esc_html( $used_count ),
-		( $max_usage == 0 ? esc_html__( 'Unlimited', 'direktt-cross-sell' ) : esc_html( $max_usage ) )
-	);
-	echo '</td></tr>';
+		echo '<thead>';
+			echo '<tr><th>' . esc_html__( 'Partner', 'direktt-cross-sell' ) . '</th><td>' . $partner_name . '</td></tr>';
+		echo '</thead>';
+		echo '<tbody>';
+			echo '<tr><th>' . esc_html__( 'Description', 'direktt-cross-sell' ) . '</th><td>' . $group_descr . '</td></tr>';
+			echo '<tr><th>' . esc_html__( 'Issued', 'direktt-cross-sell' ) . '</th><td>' . human_time_diff( strtotime( $issued_date ) ) . '</td></tr>';
+			echo '<tr><th>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</th><td>' . $expires . '</td></tr>';
+			echo '<tr><th>' . esc_html__( 'Usages', 'direktt-cross-sell' ) . '</th><td>';
+			printf(
+				esc_html__( '%1$s / %2$s', 'direktt-cross-sell' ),
+				esc_html( $used_count ),
+				( $max_usage == 0 ? esc_html__( 'Unlimited', 'direktt-cross-sell' ) : esc_html( $max_usage ) )
+			);
+			echo '</td></tr>';
+		echo '</tbody>';
 	echo '</table>';
 }
 
@@ -2627,9 +2631,9 @@ function direktt_cross_sell_coupon_validation() {
 			</script>
 			<?php
 		} elseif ( $is_expired ) {
-			echo '<p><em>' . esc_html__( 'This coupon has expired and cannot be used.', 'direktt-cross-sell' ) . '</em></p>';
+			echo '<p class="notice notice-error"><em>' . esc_html__( 'This coupon has expired and cannot be used.', 'direktt-cross-sell' ) . '</em></p>';
 		} elseif ( $disable_use ) {
-			echo '<p><em>' . esc_html__( 'This coupon has reached its usage limit.', 'direktt-cross-sell' ) . '</em></p>';
+			echo '<p class="notice notice-error"><em>' . esc_html__( 'This coupon has reached its usage limit.', 'direktt-cross-sell' ) . '</em></p>';
 		}
 		echo '</div>';
 		echo '</div>';
