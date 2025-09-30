@@ -1584,12 +1584,102 @@ function direktt_cross_sell_setup_profile_tool() {
 }
 
 function direktt_cross_sell_process_use_coupon( $coupon ) {
+	// TODO testirati ovo
+	global $direktt_user;
+	if ( ! $direktt_user ) {
+		return;
+	}
+	$partners          = direktt_cross_sell_get_partners();
+	$eligible_partners = array();
+	$category_ids      = Direktt_User::get_user_categories( $direktt_user['ID'] );
+	$tag_ids           = Direktt_User::get_user_tags( $direktt_user['ID'] );
+	if ( class_exists( 'Direktt_User' ) && Direktt_User::is_direktt_admin() ) {
+		$eligible_partners = $partners;
+	} else {
+		if ( empty( $category_ids ) && empty( $tag_ids ) ) {
+			$partners_with_cat_tag = array();
+		} else {
+			$meta_query = array( 'relation' => 'OR' );
+
+			if ( ! empty( $category_ids ) ) {
+				$meta_query[] = array(
+					'key'     => 'direktt_cross_sell_partner_categories',
+					'value'   => $category_ids,
+					'compare' => 'IN',
+				);
+			}
+
+			if ( ! empty( $tag_ids ) ) {
+				$meta_query[] = array(
+					'key'     => 'direktt_cross_sell_partner_tags',
+					'value'   => $tag_ids,
+					'compare' => 'IN',
+				);
+			}
+
+			$args = array(
+				'post_type'      => 'direkttcspartners',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'meta_query'     => $meta_query,
+			);
+
+			$partners_with_cat_tag = get_posts( $args );
+		}
+
+		if ( ! empty( $partners_with_cat_tag ) ) {
+			foreach ( $partners_with_cat_tag as $partner ) {
+				$eligible_partners[] = array(
+					'ID'    => $partner->ID,
+					'title' => $partner->post_title,
+				);
+
+				$partners_for_edit = get_post_meta( $partner->ID, 'direktt_cross_sell_partners_for_who_can_edit', false );
+				if ( ! empty( $partners_for_edit ) ) {
+					foreach ( $partners_for_edit as $edit_partner_id ) {
+						$edit_partner = get_post( $edit_partner_id );
+						if ( $edit_partner ) {
+							$eligible_partners[] = array(
+								'ID'    => $edit_partner->ID,
+								'title' => $edit_partner->post_title,
+							);
+						}
+					}
+				}
+			}
+		}
+	}
 
 	$use_coupon_id = intval( $coupon->ID );
 
 	$wpdb         = $GLOBALS['wpdb'];
 	$used_table   = $wpdb->prefix . 'direktt_cross_sell_used';
 	$issued_table = $wpdb->prefix . 'direktt_cross_sell_issued';
+
+	$partner_post_id = $coupon->partner_id;
+
+	$can_use = false;
+
+	if ( ! empty( $eligible_partners ) ) {
+		if ( ! is_array( $eligible_partners ) ) {
+			$eligible_partners = array( $eligible_partners );
+		} else {
+			$eligible_partners = array_unique( $eligible_partners, SORT_REGULAR );
+		}
+
+		foreach ( $eligible_partners as $eligible_partner ) {
+			if ( intval( $eligible_partner['ID'] ) === intval( $partner_post_id ) ) {
+				$can_use = true;
+				break;
+			}
+		}
+	} else {
+		return;
+	}
+
+	if ( ! $can_use ) {
+		return;
+	}
 
 	// RACE CONDITION SAFE usage check!
 	$latest_used_count = direktt_cross_sell_get_used_count( intval( $coupon->ID ) );
@@ -2604,7 +2694,7 @@ function direktt_cross_sell_process_coupon_invalidate() {
 	global $wpdb;
 	$table = $wpdb->prefix . 'direktt_cross_sell_issued';
 
-    if ( ! Direktt_User::is_direktt_admin() ) {
+    if ( class_exists( 'Direktt_User' ) && ! Direktt_User::is_direktt_admin() ) {
 		return;
 	}
 
@@ -2973,7 +3063,7 @@ function direktt_cross_sell_user_tool() {
 	$eligible_partners = array();
 	$category_ids      = Direktt_User::get_user_categories( $direktt_user['ID'] );
 	$tag_ids           = Direktt_User::get_user_tags( $direktt_user['ID'] );
-	if ( Direktt_User::is_direktt_admin() ) {
+	if ( class_exists( 'Direktt_User' ) && Direktt_User::is_direktt_admin() ) {
 		$eligible_partners = $partners;
 	} else {
 		if ( empty( $category_ids ) && empty( $tag_ids ) ) {
