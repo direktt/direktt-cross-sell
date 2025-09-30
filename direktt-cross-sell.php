@@ -152,11 +152,7 @@ function direktt_cross_sell_settings() {
 		update_option( 'direktt_cross_sell_issue_tags', isset( $_POST['direktt_cross_sell_issue_tags'] ) ? intval( $_POST['direktt_cross_sell_issue_tags'] ) : 0 );
 		update_option( 'direktt_cross_sell_review_categories', isset( $_POST['direktt_cross_sell_review_categories'] ) ? intval( $_POST['direktt_cross_sell_review_categories'] ) : 0 );
 		update_option( 'direktt_cross_sell_review_tags', isset( $_POST['direktt_cross_sell_review_tags'] ) ? intval( $_POST['direktt_cross_sell_review_tags'] ) : 0 );
-
 		update_option( 'direktt_cross_sell_check_slug', isset( $_POST['direktt_cross_sell_check_slug'] ) ? sanitize_text_field( $_POST['direktt_cross_sell_check_slug'] ) : '' );
-		update_option( 'direktt_cross_sell_user_template', intval( $_POST['direktt_cross_sell_user_template'] ) );
-		update_option( 'direktt_cross_sell_admin_template', intval( $_POST['direktt_cross_sell_admin_template'] ) );
-		update_option( 'direktt_cross_sell_salesman_template', intval( $_POST['direktt_cross_sell_salesman_template'] ) );
 
 		$success = true;
 	}
@@ -166,13 +162,7 @@ function direktt_cross_sell_settings() {
 	$issue_tags        = get_option( 'direktt_cross_sell_issue_tags', 0 );
 	$review_categories = get_option( 'direktt_cross_sell_review_categories', 0 );
 	$review_tags       = get_option( 'direktt_cross_sell_review_tags', 0 );
-
 	$check_slug        = get_option( 'direktt_cross_sell_check_slug' );
-	$user_template     = intval( get_option( 'direktt_cross_sell_user_template', 0 ) );
-	$admin_template    = intval( get_option( 'direktt_cross_sell_admin_template', 0 ) );
-	$salesman_template = intval( get_option( 'direktt_cross_sell_salesman_template', 0 ) );
-
-	$templates = Direktt_Message_Template::get_templates( array( 'all', 'none' ) );
 
 	$all_categories = Direktt_User::get_all_user_categories();
 	$all_tags       = Direktt_User::get_all_user_tags();
@@ -249,48 +239,6 @@ function direktt_cross_sell_settings() {
 					<td>
 						<input type="text" name="direktt_cross_sell_check_slug" id="direktt_cross_sell_check_slug" value="<?php echo esc_attr( $check_slug ); ?>" size="80" />
 						<p class="description"><?php esc_html_e( 'Slug of the page with the Cross-Sell Coupon Validation shortcode', 'direktt-cross-sell' ); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="direktt_cross_sell_user_template"><?php echo esc_html__( 'User Validated Template', 'direktt-cross-sell' ); ?></label></th>
-					<td>
-						<select name="direktt_cross_sell_user_template" id="direktt_cross_sell_user_template">
-							<option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
-							<?php foreach ( $templates as $template ) : ?>
-								<option value="<?php echo esc_attr( $template['value'] ); ?>" <?php selected( $user_template, $template['value'] ); ?>>
-									<?php echo esc_html( $template['title'] ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description"><?php esc_html_e( 'Message Template for User Message on Coupon Validation', 'direktt-cross-sell' ); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="direktt_cross_sell_admin_template"><?php echo esc_html__( 'Admin Validated Template', 'direktt-cross-sell' ); ?></label></th>
-					<td>
-						<select name="direktt_cross_sell_admin_template" id="direktt_cross_sell_admin_template">
-							<option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
-							<?php foreach ( $templates as $template ) : ?>
-								<option value="<?php echo esc_attr( $template['value'] ); ?>" <?php selected( $admin_template, $template['value'] ); ?>>
-									<?php echo esc_html( $template['title'] ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description"><?php esc_html_e( 'Message Template for Admin Message on Coupon Validation', 'direktt-cross-sell' ); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="direktt_cross_sell_salesman_template"><?php echo esc_html__( 'Salesman Validated Template', 'direktt-cross-sell' ); ?></label></th>
-					<td>
-						<select name="direktt_cross_sell_salesman_template" id="direktt_cross_sell_salesman_template">
-							<option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
-							<?php foreach ( $templates as $template ) : ?>
-								<option value="<?php echo esc_attr( $template['value'] ); ?>" <?php selected( $salesman_template, $template['value'] ); ?>>
-									<?php echo esc_html( $template['title'] ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description"><?php echo esc_html__( 'Message Template for Salesman Message on Coupon Validation', 'direktt-cross-sell' ); ?></p>
 					</td>
 				</tr>
 			</table>
