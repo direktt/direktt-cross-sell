@@ -2733,7 +2733,9 @@ function direktt_cross_sell_user_tool() {
 		echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service">';
 
 		if ( empty( $coupons ) ) {
-			echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
+			echo '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p></div>';
+			echo '</div>';
+			echo '</div>';
 			echo '</div>';
 			return ob_get_clean();
 		}
@@ -2742,13 +2744,17 @@ function direktt_cross_sell_user_tool() {
 
         $partner_post = get_post( $coupon->partner_id );
         if ( ! $partner_post || $partner_post->post_status !== 'publish' ) {
-            echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
+            echo '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p></div>';
+			echo '</div>';
+			echo '</div>';
 			echo '</div>';
             return ob_get_clean();
         }
         $coupon_group_post = get_post( $coupon->coupon_group_id );
         if ( ! $coupon_group_post || $coupon_group_post->post_status !== 'publish' ) {
-			echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
+			echo '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p></div>';
+			echo '</div>';
+			echo '</div>';
 			echo '</div>';
 			return ob_get_clean();
 		}
@@ -2846,12 +2852,18 @@ function direktt_cross_sell_user_tool() {
 
             $partner_post = get_post( $partner_id );
             if ( ! $partner_post || $partner_post->post_status !== 'publish' ) {
-                echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
+                echo '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p></div>';
+                echo '</div>';
+                echo '</div>';
+                echo '</div>';
                 return ob_get_clean();
             }
             $coupon_group_post = get_post( intval( $_POST['direktt_coupon_group_id'] ) );
             if ( ! $coupon_group_post || $coupon_group_post->post_status !== 'publish' ) {
-                echo '<p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p>';
+                echo '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found or you do not have permission to view it.', 'direktt-cross-sell' ) . '</p></div>';
+				echo '</div>';
+				echo '</div>';
+				echo '</div>';
                 return ob_get_clean();
             }
 
@@ -2954,14 +2966,19 @@ function direktt_cross_sell_user_tool() {
 			
 			echo '<a href="' . esc_url( $back_url ) . '" class="button button-invert direktt-cross-sell-back button-dark-gray">' . esc_html__( 'Back', 'direktt-cross-sell' ) . '</a>';
 			echo '</div>';
+			echo '</div>';
+			echo '</div>';
 			return ob_get_clean();
 		}
 
 		$partner = get_post( $partner_id );
 		if ( ! $partner || $partner->post_type !== 'direkttcspartners' || $partner->post_status !== 'publish' ) {
-			echo '<p>' . esc_html__( 'Invalid partner selected.', 'direktt-cross-sell' ) . '</p>';
+			echo '<div class="notice notice-error"><p>' . esc_html__( 'Invalid partner selected.', 'direktt-cross-sell' ) . '</p></div>';
 			$back_url = remove_query_arg( array( 'direktt_action', 'coupon_id', 'cross_sell_use_flag', 'cross_sell_invalidate_flag', 'direktt_partner_id', 'partner_id', 'cross_sell_status_flag' ) );
 			echo '<a href="' . esc_url( $back_url ) . '" class="button button-invert direktt-cross-sell-back button-dark-gray">' . esc_html__( 'Back to Cross-Sell', 'direktt-cross-sell' ) . '</a>';
+			echo '</div>';
+			echo '</div>';
+			echo '</div>';
 			return;
 		}
 
@@ -2970,7 +2987,7 @@ function direktt_cross_sell_user_tool() {
 		$groups = direktt_cross_sell_get_partner_coupon_groups( $partner_id );
 
 		if ( empty( $groups ) ) {
-			echo '<p>' . esc_html__( 'No Coupon Groups for this partner.', 'direktt-cross-sell' ) . '</p>';
+			echo '<div class="notice notice-warning"><p>' . esc_html__( 'No Coupon Groups for this partner.', 'direktt-cross-sell' ) . '</p></div>';
 		} else {
 			?>
 			<ul class="direktt-cross-sell-partner-list">
