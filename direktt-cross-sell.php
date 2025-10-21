@@ -88,7 +88,7 @@ function direktt_cross_sell_activation_check() {
         deactivate_plugins(plugin_basename(__FILE__));
 
         // Prevent the “Plugin activated.” notice
-        if (isset($_GET['activate'])) {
+        if (isset($_GET['activate'])) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Justification: not a form processing, just removing a query var.
             unset($_GET['activate']);
         }
 
@@ -153,8 +153,8 @@ function direktt_cross_sell_settings() {
 
 	// Handle form submission
 	if (
-		$_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['direktt_admin_cross_sales_nonce'] )
-		&& wp_verify_nonce( $_POST['direktt_admin_cross_sales_nonce'], 'direktt_admin_cross_sales_save' )
+		isset( $_SERVER['REQUEST_METHOD'] ) && $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['direktt_admin_cross_sales_nonce'] )
+		&& wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['direktt_admin_cross_sales_nonce'] ) ), 'direktt_admin_cross_sales_save' )
 	) {
 		// Sanitize and update options
 
@@ -162,7 +162,7 @@ function direktt_cross_sell_settings() {
 		update_option( 'direktt_cross_sell_issue_tags', isset( $_POST['direktt_cross_sell_issue_tags'] ) ? intval( $_POST['direktt_cross_sell_issue_tags'] ) : 0 );
 		update_option( 'direktt_cross_sell_review_categories', isset( $_POST['direktt_cross_sell_review_categories'] ) ? intval( $_POST['direktt_cross_sell_review_categories'] ) : 0 );
 		update_option( 'direktt_cross_sell_review_tags', isset( $_POST['direktt_cross_sell_review_tags'] ) ? intval( $_POST['direktt_cross_sell_review_tags'] ) : 0 );
-		update_option( 'direktt_cross_sell_check_slug', isset( $_POST['direktt_cross_sell_check_slug'] ) ? sanitize_text_field( $_POST['direktt_cross_sell_check_slug'] ) : '' );
+		update_option( 'direktt_cross_sell_check_slug', isset( $_POST['direktt_cross_sell_check_slug'] ) ? sanitize_title( wp_unslash( $_POST['direktt_cross_sell_check_slug'] ) ) : '' );
 
 		$success = true;
 	}
@@ -593,23 +593,21 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 				</td>
 			</tr>
 			<tr>
-				<th scope="row"><label for="direktt_cross_sell_qr_code_bg_color"><?php echo esc_html__( 'QR Code Preview', 'direktt-cross-sell' ); ?></label></th>
+				<th scope="row"><label for="direktt-cross-sell-qr-wrapper"><?php echo esc_html__( 'QR Code Preview', 'direktt-cross-sell' ); ?></label></th>
 				<td>
 					<div class="direktt-cross-sell-qr-canvas-wrapper">
 						<div id="direktt-cross-sell-qr-canvas"></div>
 					</div>
 					<?php
-					$actionObject = json_encode(
-						array(
-							'action' => array(
-								'type'    => 'link',
-								'params'  => array(
-									'url'    => 'direktt.com',
-									'target' => 'browser',
-								),
-								'retVars' => array(),
+					$actionObject = array(
+						'action' => array(
+							'type'    => 'link',
+							'params'  => array(
+								'url'    => 'direktt.com',
+								'target' => 'browser',
 							),
-						)
+							'retVars' => array(),
+						),
 					);
 					?>
 					<script type="text/javascript">
@@ -617,7 +615,7 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 							width: 350,
 							height: 350,
 							type: "svg",
-							data: '<?php echo $actionObject; ?>',
+							data: '<?php echo wp_json_encode( $actionObject ); ?>',
 							image: '<?php echo $qr_code_image ? esc_js( $qr_code_image ) : ''; ?>',
 							dotsOptions: {
 								color: '<?php echo $qr_code_color ? esc_js( $qr_code_color ) : '#000000'; ?>',
@@ -640,7 +638,7 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 									width: 350,
 									height: 350,
 									type: "svg",
-									data: '<?php echo $actionObject; ?>',
+									data: '<?php echo wp_json_encode( $actionObject ); ?>',
 									image: $( '#direktt_cross_sell_qr_code_image' ).val() ? $( '#direktt_cross_sell_qr_code_image' ).val() : '',
 									dotsOptions: {
 										color: $( '#direktt_cross_sell_qr_code_color' ).val() ? $( '#direktt_cross_sell_qr_code_color' ).val() : '#000000',
@@ -666,7 +664,7 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 										width: 350,
 										height: 350,
 										type: "svg",
-										data: '<?php echo $actionObject; ?>',
+										data: '<?php echo wp_json_encode( $actionObject ); ?>',
 										image: $( '#direktt_cross_sell_qr_code_image' ).val() ? $( '#direktt_cross_sell_qr_code_image' ).val() : '',
 										dotsOptions: {
 											color: color,
@@ -693,7 +691,7 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 										width: 350,
 										height: 350,
 										type: "svg",
-										data: '<?php echo $actionObject; ?>',
+										data: '<?php echo wp_json_encode( $actionObject ); ?>',
 										image: $( '#direktt_cross_sell_qr_code_image' ).val() ? $( '#direktt_cross_sell_qr_code_image' ).val() : '',
 										dotsOptions: {
 											color: $( '#direktt_cross_sell_qr_code_color' ).val() ? $( '#direktt_cross_sell_qr_code_color' ).val() : '#000000',
@@ -869,7 +867,7 @@ function direktt_cross_sell_partners_render_reports_meta_box( $post ) {
 }
 
 function handle_direktt_cross_sell_get_issued_report() {
-	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'direktt_reports_meta_box' ) ) {
+	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'direktt_reports_meta_box' ) ) {
 		wp_send_json_error( esc_html__( 'Invalid nonce.', 'direktt-cross-sell' ) );
 		wp_die();
 	}
@@ -887,7 +885,7 @@ function handle_direktt_cross_sell_get_issued_report() {
 	global $wpdb;
 
 	$post_id      = intval( $_POST['post_id'] ); // used as partner_id
-	$range        = sanitize_text_field( $_POST['range'] );
+	$range        = sanitize_text_field( wp_unslash( $_POST['range'] ) );
 	$issued_table = $wpdb->prefix . 'direktt_cross_sell_issued';
 
 	// Build WHERE
@@ -901,22 +899,36 @@ function handle_direktt_cross_sell_get_issued_report() {
 			wp_send_json_error( esc_html__( 'Data error.', 'direktt-cross-sell' ) );
 			wp_die();
 		}
-		$from   = sanitize_text_field( $_POST['from'] ); // format: Y-m-d or Y-m-d H:i:s
-		$to     = sanitize_text_field( $_POST['to'] );
+		$from   = sanitize_text_field( wp_unslash( $_POST['from'] ) ); // format: Y-m-d or Y-m-d H:i:s
+		$to     = sanitize_text_field( wp_unslash( $_POST['to'] ) );
 		$where .= $wpdb->prepare( ' AND coupon_time BETWEEN %s AND %s', $from, $to );
 	}
 
 	// Get issued coupons
-	$query   = "SELECT * FROM {$issued_table} WHERE {$where}";
-	$results = $wpdb->get_results( $query );
+	$results = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $issued_table WHERE $where" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+	// Justifications for phpcs ignores:
+	// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $issued_table is built from $wpdb->prefix + literal string, $where is built from literal string + sanitized inputs.
+	// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_results() is the official WordPress method for this.
+	// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
 
 	if ( empty( $results ) ) {
 		wp_send_json_error( esc_html__( 'No data found.', 'direktt-cross-sell' ) );
 		wp_die();
 	}
 
-	// Build CSV with custom columns
-	$csv = fopen( 'php://temp', 'r+' );
+	if ( ! function_exists( 'get_filesystem_method' ) ) {
+        require_once( ABSPATH . 'wp-admin/includes/file.php' );
+    }
+
+    global $wp_filesystem;
+    $method = get_filesystem_method();
+    if ( 'direct' === $method ) {
+        WP_Filesystem();
+    }
+
+	// Prepare CSV content in an array format (no need for fopen())
+    $csv_content = '';
 
 	// Headers
 	$headers = array(
@@ -928,7 +940,9 @@ function handle_direktt_cross_sell_get_issued_report() {
 		'Time of Expiring',
 		'Coupon Valid',
 	);
-	fputcsv( $csv, $headers );
+
+	// Add headers to the CSV content
+    $csv_content .= implode( ',', $headers ) . "\n";
 
 	foreach ( $results as $row ) {
 		$partner_name       = get_the_title( $row->partner_id );
@@ -943,27 +957,29 @@ function handle_direktt_cross_sell_get_issued_report() {
 			$row->coupon_expires,
 			$row->coupon_valid == 1 ? 'true' : 'false',
 		);
-		fputcsv( $csv, $line );
+
+		// Add each row to the CSV content
+        $csv_content .= implode( ',', $line ) . "\n";
 	}
 
-	rewind( $csv );
-	$csv_content = stream_get_contents( $csv );
-	fclose( $csv );
+	// Save to uploads directory using WP_Filesystem
+    $upload_dir = wp_upload_dir();
+    $filename   = 'issued_report_' . time() . '.csv';
+    $filepath   = $upload_dir['path'] . '/' . $filename;
+    $fileurl    = $upload_dir['url'] . '/' . $filename;
 
-	// Save to uploads
-	$upload_dir = wp_upload_dir();
-	$filename   = 'issued_report_' . time() . '.csv';
-	$filepath   = $upload_dir['path'] . '/' . $filename;
-	$fileurl    = $upload_dir['url'] . '/' . $filename;
-
-	file_put_contents( $filepath, $csv_content );
+	// Write CSV content to the file using WP_Filesystem
+    if ( ! $wp_filesystem->put_contents( $filepath, $csv_content, FS_CHMOD_FILE ) ) {
+        wp_send_json_error( esc_html__( 'Error saving the file.', 'direktt-cross-sell' ) );
+        wp_die();
+    }
 
 	wp_send_json_success( array( 'url' => $fileurl ) );
 	wp_die();
 }
 
 function handle_direktt_cross_sell_get_used_report() {
-	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'direktt_reports_meta_box' ) ) {
+	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'direktt_reports_meta_box' ) ) {
 		wp_send_json_error( esc_html__( 'Invalid nonce.', 'direktt-cross-sell' ) );
 		wp_die();
 	}
@@ -981,7 +997,7 @@ function handle_direktt_cross_sell_get_used_report() {
 	global $wpdb;
 
 	$post_id = intval( $_POST['post_id'] );
-	$range   = sanitize_text_field( $_POST['range'] );
+	$range   = sanitize_text_field( wp_unslash( $_POST['range'] ) );
 
 	$issued_table   = $wpdb->prefix . 'direktt_cross_sell_issued';
 	$used_ind_table = $wpdb->prefix . 'direktt_cross_sell_used';
@@ -996,27 +1012,21 @@ function handle_direktt_cross_sell_get_used_report() {
 			wp_send_json_error( esc_html__( 'Data error.', 'direktt-cross-sell' ) );
 			wp_die();
 		}
-		$from           = sanitize_text_field( $_POST['from'] );
-		$to             = sanitize_text_field( $_POST['to'] );
+		$from           = sanitize_text_field( wp_unslash( $_POST['from'] ) );
+		$to             = sanitize_text_field( wp_unslash( $_POST['to'] ) );
 		$date_condition = $wpdb->prepare( 'AND u.coupon_used_time BETWEEN %s AND %s', $from, $to );
 	}
 
 	// --- Used ---
-	$query   = "
-        SELECT u.ID,
-               u.issued_id,
-               u.direktt_validator_user_id,
-               u.coupon_used_time,
-               i.partner_id,
-               i.coupon_group_id
-        FROM {$used_ind_table} u
-        INNER JOIN {$issued_table} i ON u.issued_id = i.ID
-        WHERE i.partner_id = %d {$date_condition}
-    ";
-	$results = $wpdb->get_results( $wpdb->prepare( $query, $post_id ) );
+	$results = $wpdb->get_results( $wpdb->prepare( "SELECT u.ID, u.issued_id, u.direktt_validator_user_id, u.coupon_used_time, i.partner_id, i.coupon_group_id FROM $used_ind_table u INNER JOIN $issued_table i ON u.issued_id = i.ID WHERE i.partner_id = $post_id $date_condition" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-	// --- CSV ---
-	$csv = fopen( 'php://temp', 'r+' );
+	// Justifications for phpcs ignores:
+	// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $issued_table and $used_table are built from $wpdb->prefix + literal string, $post_id is sanitized input, $date_condition is built from literal string + sanitized inputs.
+	// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_results() is the official WordPress method for this.
+	// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
+
+	// --- Prepare CSV Content (in memory) ---
+	$csv_content = '';
 
 	$headers = array(
 		'Partner Name',
@@ -1025,7 +1035,9 @@ function handle_direktt_cross_sell_get_used_report() {
 		'Validator Display Name',
 		'Validation Time',
 	);
-	fputcsv( $csv, $headers );
+
+	// Add headers
+	$csv_content .= implode( ',', $headers ) . "\n";
 
 	// Add results
 	foreach ( $results as $row ) {
@@ -1041,20 +1053,32 @@ function handle_direktt_cross_sell_get_used_report() {
 			$validator_name,
 			$row->coupon_used_time,
 		);
-		fputcsv( $csv, $line );
+
+		$csv_content .= implode( ',', $line ) . "\n";
 	}
 
-	rewind( $csv );
-	$csv_content = stream_get_contents( $csv );
-	fclose( $csv );
+	// --- Prepare to save with WP_Filesystem ---
+	if ( ! function_exists( 'get_filesystem_method' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+	}
 
-	// Save to uploads
+	global $wp_filesystem;
+	if ( ! is_object( $wp_filesystem ) ) {
+		WP_Filesystem();
+	}
+
 	$upload_dir = wp_upload_dir();
 	$filename   = 'used_report_' . time() . '.csv';
 	$filepath   = $upload_dir['path'] . '/' . $filename;
 	$fileurl    = $upload_dir['url'] . '/' . $filename;
 
-	file_put_contents( $filepath, $csv_content );
+	// Save file using WP_Filesystem
+	$write_success = $wp_filesystem->put_contents( $filepath, $csv_content, FS_CHMOD_FILE );
+
+	if ( ! $write_success ) {
+		wp_send_json_error( esc_html__( 'Failed to save report file.', 'direktt-cross-sell' ) );
+		wp_die();
+	}
 
 	wp_send_json_success( array( 'url' => $fileurl ) );
 	wp_die();
@@ -1069,7 +1093,7 @@ function save_direktt_cross_sell_partner_meta( $post_id ) {
 		return;
 	}
 
-	if ( ! isset( $_POST['direktt_cross_sell_nonce'] ) || ! wp_verify_nonce( $_POST['direktt_cross_sell_nonce'], 'direktt_cross_sell_save' ) ) {
+	if ( ! isset( $_POST['direktt_cross_sell_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_nonce'] ) ), 'direktt_cross_sell_save' ) ) {
 		return;
 	}
 
@@ -1079,7 +1103,7 @@ function save_direktt_cross_sell_partner_meta( $post_id ) {
 
 	if ( isset( $_POST['direktt_cross_sell_partners_for_who_can_edit'] ) && is_array( $_POST['direktt_cross_sell_partners_for_who_can_edit'] ) ) {
 
-		$groups = array_map( 'sanitize_text_field', $_POST['direktt_cross_sell_partners_for_who_can_edit'] );
+		$groups = array_map( 'sanitize_text_field', array_map( 'wp_unslash', $_POST['direktt_cross_sell_partners_for_who_can_edit'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Justification: both sanitized and unslashed by array_map functions.
 		$groups = array_filter(
 			$groups,
 			function ( $group ) {
@@ -1101,35 +1125,35 @@ function save_direktt_cross_sell_partner_meta( $post_id ) {
 		update_post_meta(
 			$post_id,
 			'direktt_cross_sell_partner_categories',
-			sanitize_text_field( $_POST['direktt_cross_sell_partner_categories'] )
+			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_partner_categories'] ) )
 		);
 	}
 	if ( isset( $_POST['direktt_cross_sell_issue_tags'] ) ) {
 		update_post_meta(
 			$post_id,
 			'direktt_cross_sell_partner_tags',
-			sanitize_text_field( $_POST['direktt_cross_sell_issue_tags'] )
+			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_issue_tags'] ) )
 		);
 	}
 	if ( isset( $_POST['direktt_cross_sell_qr_code_image'] ) ) {
 		update_post_meta(
 			$post_id,
 			'direktt_cross_sell_qr_code_image',
-			sanitize_text_field( $_POST['direktt_cross_sell_qr_code_image'] )
+			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_qr_code_image'] ) )
 		);
 	}
 	if ( isset( $_POST['direktt_cross_sell_qr_code_color'] ) ) {
 		update_post_meta(
 			$post_id,
 			'direktt_cross_sell_qr_code_color',
-			sanitize_text_field( $_POST['direktt_cross_sell_qr_code_color'] )
+			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_qr_code_color'] ) )
 		);
 	}
 	if ( isset( $_POST['direktt_cross_sell_qr_code_bg_color'] ) ) {
 		update_post_meta(
 			$post_id,
 			'direktt_cross_sell_qr_code_bg_color',
-			sanitize_text_field( $_POST['direktt_cross_sell_qr_code_bg_color'] )
+			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_qr_code_bg_color'] ) )
 		);
 	}
 }
@@ -1144,7 +1168,8 @@ function direktt_cross_sell_partners_enqueue_scripts( $hook ) {
 			'qr-code-styling', // Handle
 			plugin_dir_url( __FILE__ ) . 'assets/js/qr-code-styling.js', // Source
 			array(), // Dependencies (none in this case)
-			null,
+			filetime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
+			true
 		);
 	}
 }
@@ -1156,7 +1181,8 @@ function direktt_cross_sell_enqueue_fe_scripts( $hook ) {
 			'qr-code-styling', // Handle
 			plugin_dir_url( __FILE__ ) . 'assets/js/qr-code-styling.js', // Source
 			array(), // Dependencies (none in this case)
-			null,
+			filetime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
+			true
 		);
 	}
 }
@@ -1260,7 +1286,7 @@ function save_direktt_cross_sell_coupon_groups_meta( $post_id ) {
 		return;
 	}
 
-	if ( ! isset( $_POST['direktt_cross_sell_nonce'] ) || ! wp_verify_nonce( $_POST['direktt_cross_sell_nonce'], 'direktt_cross_sell_save' ) ) {
+	if ( ! isset( $_POST['direktt_cross_sell_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_nonce'] ) ), 'direktt_cross_sell_save' ) ) {
 		return;
 	}
 
@@ -1272,7 +1298,7 @@ function save_direktt_cross_sell_coupon_groups_meta( $post_id ) {
 		update_post_meta(
 			$post_id,
 			'direktt_cross_sell_partner_for_coupon_group',
-			sanitize_text_field( $_POST['direktt_cross_sell_partner_for_coupon_group'] )
+			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_partner_for_coupon_group'] ) )
 		);
 	}
 
@@ -1280,35 +1306,35 @@ function save_direktt_cross_sell_coupon_groups_meta( $post_id ) {
 		update_post_meta(
 			$post_id,
 			'direktt_cross_sell_group_validity',
-			sanitize_text_field( $_POST['direktt_cross_sell_group_validity'] )
+			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_group_validity'] ) )
 		);
 	}
 	if ( isset( $_POST['direktt_cross_sell_max_usage'] ) ) {
 		update_post_meta(
 			$post_id,
 			'direktt_cross_sell_max_usage',
-			sanitize_text_field( $_POST['direktt_cross_sell_max_usage'] )
+			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_max_usage'] ) )
 		);
 	}
 	if ( isset( $_POST['direktt_cross_sell_max_issuance'] ) ) {
 		update_post_meta(
 			$post_id,
 			'direktt_cross_sell_max_issuance',
-			sanitize_text_field( $_POST['direktt_cross_sell_max_issuance'] )
+			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_max_issuance'] ) )
 		);
 	}
 	if ( isset( $_POST['direktt_cross_sell_group_template'] ) ) {
 		update_post_meta(
 			$post_id,
 			'direktt_cross_sell_group_template',
-			sanitize_text_field( $_POST['direktt_cross_sell_group_template'] )
+			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_group_template'] ) )
 		);
 	}
 	if ( isset( $_POST['direktt_cross_sell_qr_code_message'] ) ) {
 		update_post_meta(
 			$post_id,
 			'direktt_cross_sell_qr_code_message',
-			sanitize_text_field( $_POST['direktt_cross_sell_qr_code_message'] )
+			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_qr_code_message'] ) )
 		);
 	}
 }
@@ -1343,9 +1369,13 @@ function direktt_cross_sell_create_issued_database_table() {
 
 	dbDelta( $sql );
 
-	$the_default_timestamp_query = "ALTER TABLE $table_name MODIFY COLUMN coupon_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP;";
+	$wpdb->query( $wpdb->prepare( "ALTER TABLE $table_name MODIFY COLUMN coupon_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP;" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 
-	$wpdb->query( $the_default_timestamp_query );
+	// Justifications for phpcs ignores:
+	// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $table_name is built from $wpdb->prefix + literal string.
+	// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct database query is acceptable here since schema changes cannot be performed via WordPress APIs or $wpdb helper functions. This runs only on plugin activation.
+	// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is irrelevant for schema modifications. The query changes table structure, not data, so wp_cache_* functions are not applicable.
+	// WordPress.DB.DirectDatabaseQuery.SchemaChange: Schema changes are discouraged in normal runtime, but this code executes only once during plugin activation to ensure correct table structure.
 }
 
 function direktt_cross_sell_create_used_database_table() {
@@ -1369,9 +1399,13 @@ function direktt_cross_sell_create_used_database_table() {
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 	dbDelta( $sql );
 
-	$the_default_timestamp_query = "ALTER TABLE $table_name MODIFY COLUMN coupon_used_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP;";
+	$wpdb->query( $wpdb->prepare( "ALTER TABLE $table_name MODIFY COLUMN coupon_used_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP;" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 
-	$wpdb->query( $the_default_timestamp_query );
+	// Justifications for phpcs ignores:
+	// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $table_name is built from $wpdb->prefix + literal string.
+	// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct database query is acceptable here since schema changes cannot be performed via WordPress APIs or $wpdb helper functions. This runs only on plugin activation.
+	// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is irrelevant for schema modifications. The query changes table structure, not data, so wp_cache_* functions are not applicable.
+	// WordPress.DB.DirectDatabaseQuery.SchemaChange: Schema changes are discouraged in normal runtime, but this code executes only once during plugin activation to ensure correct table structure.
 }
 
 function direktt_cross_sell_get_all_partners() {
@@ -1579,7 +1613,7 @@ function direktt_cross_sell_process_use_coupon( $coupon ) {
 				'post_type'      => 'direkttcspartners',
 				'post_status'    => 'publish',
 				'posts_per_page' => -1,
-				'meta_query'     => $meta_query,
+				'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- - Justification: bounded, cached, selective query on small dataset
 			);
 
 			$partners_with_cat_tag = get_posts( $args );
@@ -1657,7 +1691,13 @@ function direktt_cross_sell_process_use_coupon( $coupon ) {
 		exit;
 	} else {
 		$now_time      = current_time( 'mysql' );
-		$coupon_issued = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $issued_table WHERE ID = %d", $use_coupon_id ) );
+		$coupon_issued = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $issued_table WHERE ID = %d", $use_coupon_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// Justifications for phpcs ignores:
+		// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $issued_table is built from $wpdb->prefix + literal string.
+		// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_results() is the official WordPress method for this.
+		// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
+
 		if ( ! empty( $coupon_issued->coupon_expires ) && $coupon_issued->coupon_expires != '0000-00-00 00:00:00' && $coupon_issued->coupon_expires < $now_time ) {
 			// Redirect with error flag or message for expired coupon
 			$redirect_url = add_query_arg(
@@ -1672,7 +1712,7 @@ function direktt_cross_sell_process_use_coupon( $coupon ) {
 			exit;
 		}
 		// Do insert
-		$inserted     = $wpdb->insert(
+		$inserted     = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct database insert is required here to add a record to a custom plugin table; $wpdb->insert() is the official safe WordPress method using prepared statements and proper data escaping.
 			$used_table,
 			array(
 				'issued_id'                 => intval( $coupon->ID ),
@@ -1701,7 +1741,12 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
 	$wpdb         = $GLOBALS['wpdb'];
 	$issued_table = $wpdb->prefix . 'direktt_cross_sell_issued';
 
-	$coupon = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $issued_table WHERE ID = %d", $use_coupon_id ) );
+	$coupon = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $issued_table WHERE ID = %d", $use_coupon_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+	// Justifications for phpcs ignores:
+	// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $issued_table is built from $wpdb->prefix + literal string.
+	// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_results() is the official WordPress method for this.
+	// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
 
 	if ( ! $coupon ) {
 		echo '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div>';
@@ -1720,15 +1765,15 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
             }
         }
 
-		$partner_name = $partner_post ? esc_html( $partner_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
-		$group_title  = $coupon_group_post ? esc_html( $coupon_group_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
-		$group_descr  = $coupon_group_post ? nl2br( wp_kses_post( $coupon_group_post->post_content ) ) : '';
+		$partner_name = $partner_post ? $partner_post->post_title : esc_html__( 'Unknown', 'direktt-cross-sell' );
+		$group_title  = $coupon_group_post ? $coupon_group_post->post_title : esc_html__( 'Unknown', 'direktt-cross-sell' );
+		$group_descr  = $coupon_group_post ? $coupon_group_post->post_content : '';
 
 		// Expiry/issuance formatting
-		$issued_date = esc_html( mysql2date( 'Y-m-d H:i:s', $coupon->coupon_time ) );
+		$issued_date = mysql2date( 'Y-m-d H:i:s', $coupon->coupon_time );
 		$expires     = ( empty( $coupon->coupon_expires ) || $coupon->coupon_expires == '0000-00-00 00:00:00' )
 			? esc_html__( 'No expiry', 'direktt-cross-sell' )
-			: esc_html( mysql2date( 'Y-m-d H:i:s', $coupon->coupon_expires ) );
+			: mysql2date( 'Y-m-d H:i:s', $coupon->coupon_expires );
 
 		// --- Usage counts ---
 
@@ -1741,7 +1786,7 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
 		if (
 			isset( $_POST['direktt_cs_use_coupon'] ) &&
 			isset( $_POST['direktt_cs_use_coupon_nonce'] ) &&
-			wp_verify_nonce( $_POST['direktt_cs_use_coupon_nonce'], 'direktt_cs_use_coupon_action' )
+			wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['direktt_cs_use_coupon_nonce'] ) ), 'direktt_cs_use_coupon_action' )
 		) {
 			direktt_cross_sell_process_use_coupon( $coupon );
 		}
@@ -1764,14 +1809,15 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
 		echo '<h2>' . esc_html__( 'Use Coupon', 'direktt-cross-sell' ) . '</h2>';
 		echo '<table class="direktt-profile-data-cross-sell-tool-single-coupon-table">';
 		echo '<tbody>';
-		echo '<tr><th>' . esc_html__( 'Partner', 'direktt-cross-sell' ) . '</th><td><h3>' . $partner_name . '</h3></td></tr>';
-		echo '<tr><th>' . esc_html__( 'Coupon', 'direktt-cross-sell' ) . '</th><td>' . $group_title . '</td></tr>';
-		echo '<tr><th>' . esc_html__( 'Description', 'direktt-cross-sell' ) . '</th><td>' . $group_descr . '</td></tr>';
-		echo '<tr><th>' . esc_html__( 'Issued at', 'direktt-cross-sell' ) . '</th><td>' . $issued_date . '</td></tr>';
-		echo '<tr><th>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</th><td>' . $expires . '</td></tr>';
+		echo '<tr><th>' . esc_html__( 'Partner', 'direktt-cross-sell' ) . '</th><td><h3>' . esc_html( $partner_name ) . '</h3></td></tr>';
+		echo '<tr><th>' . esc_html__( 'Coupon', 'direktt-cross-sell' ) . '</th><td>' . esc_html( $group_title ) . '</td></tr>';
+		echo '<tr><th>' . esc_html__( 'Description', 'direktt-cross-sell' ) . '</th><td>' . nl2br( wp_kses_post( $group_descr ) ) . '</td></tr>';
+		echo '<tr><th>' . esc_html__( 'Issued at', 'direktt-cross-sell' ) . '</th><td>' . esc_html( $issued_date ) . '</td></tr>';
+		echo '<tr><th>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</th><td>' . esc_html( $expires ) . '</td></tr>';
 
 		echo '<tr><th>' . esc_html__( 'Usages', 'direktt-cross-sell' ) . '</th><td>';
 		printf(
+			// translators: %1$s is the used count, %2$s is the max usage limit (or 'Unlimited')
 			esc_html__( '%1$s / %2$s', 'direktt-cross-sell' ),
 			esc_html( $used_count ),
 			( $max_usage == 0 ? esc_html__( 'Unlimited', 'direktt-cross-sell' ) : esc_html( $max_usage ) )
@@ -1799,8 +1845,9 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
 			?>
 			<form method="post" action="" class="direktt-profile-data-cross-sell-tool-single-coupon-form">
                 <?php
-                echo Direktt_Public::direktt_render_confirm_popup( 'direktt-cross-sell-confirm-use', __( 'Are you sure that you want to use this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $group_title ) . '?' );
-                echo Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) );
+				$allowed_html = wp_kses_allowed_html( 'post' );
+                echo wp_kses( Direktt_Public::direktt_render_confirm_popup( 'direktt-cross-sell-confirm-use', __( 'Are you sure that you want to use this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $group_title ) . '?' ), $allowed_html );
+                echo wp_kses( Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) ), $allowed_html );
                 ?>
 				<input type="hidden" name="direktt_cs_use_coupon_nonce" value="<?php echo esc_attr( wp_create_nonce( 'direktt_cs_use_coupon_action' ) ); ?>">
 				<input type="button" name="direktt_cs_use_coupon_btn" class="button button-primary button-large" value="<?php echo esc_attr__( 'Use Coupon', 'direktt-cross-sell' ); ?>">
@@ -1831,9 +1878,9 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
 			<?php
 		} elseif ( $is_expired ) {
 			// Coupon expired message
-			echo '<p class="notice notice-error"><em>' . esc_html__( 'This coupon has expired and cannot be used.', 'direktt-cross-sell' ) . '</em></p>';
+			echo '<div class="notice notice-error"><p><em>' . esc_html__( 'This coupon has expired and cannot be used.', 'direktt-cross-sell' ) . '</em></p></div>';
 		} elseif ( $disable_use ) {
-			echo '<p class="notice notice-error"><em>' . esc_html__( 'This coupon has reached its usage limit.', 'direktt-cross-sell' ) . '</em></p>';
+			echo '<div class="notice notice-error"><p><em>' . esc_html__( 'This coupon has reached its usage limit.', 'direktt-cross-sell' ) . '</em></p></div>';
 		}
 
 		// Back
@@ -1846,13 +1893,12 @@ function direktt_cross_sell_get_issue_count( $coupon_group_id, $partner_id ) {
 	global $wpdb;
 
 	$table        = $wpdb->prefix . 'direktt_cross_sell_issued';
-	$issued_count = (int) $wpdb->get_var(
-		$wpdb->prepare(
-			"SELECT COUNT(*) FROM $table WHERE coupon_group_id = %d AND partner_id = %d",
-			intval( $coupon_group_id ),
-			intval( $partner_id )
-		)
-	);
+	$issued_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table WHERE coupon_group_id = %d AND partner_id = %d", intval( $coupon_group_id ), intval( $partner_id ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+	// Justifications for phpcs ignores:
+	// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $table is built from $wpdb->prefix + literal string.
+	// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_var() is the official WordPress method for this.
+	// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
 
 	return intval( $issued_count );
 }
@@ -1860,12 +1906,12 @@ function direktt_cross_sell_get_issue_count( $coupon_group_id, $partner_id ) {
 function direktt_cross_sell_get_used_count( $issue_id ) {
 	global $wpdb;
 	$used_table = $wpdb->prefix . 'direktt_cross_sell_used';
-	$used_count = (int) $wpdb->get_var(
-		$wpdb->prepare(
-			"SELECT COUNT(*) FROM $used_table WHERE issued_id = %s",
-			$issue_id
-		)
-	);
+	$used_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $used_table WHERE issued_id = %s", $issue_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+	// Justifications for phpcs ignores:
+	// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $used_table is built from $wpdb->prefix + literal string.
+	// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_var() is the official WordPress method for this.
+	// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
 	return intval( $used_count );
 }
 
@@ -1875,7 +1921,7 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
 		isset( $_POST['direktt_cs_issue_coupon'] ) &&
 		isset( $_POST['direktt_coupon_group_id'] ) &&
 		isset( $_POST['direktt_cs_issue_coupon_nonce'] ) &&
-		wp_verify_nonce( $_POST['direktt_cs_issue_coupon_nonce'], 'direktt_cs_issue_coupon_action' )
+		wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['direktt_cs_issue_coupon_nonce'] ) ), 'direktt_cs_issue_coupon_action' )
 	) {
 		direktt_cross_sell_process_coupon_issue( $partner_id, intval( $_POST['direktt_coupon_group_id'] ) );
 	}
@@ -1891,7 +1937,7 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
 	}
 
 	if ( $status_message ) {
-		echo '<div class="notice notice-success"><p>' . $status_message . '</p></div>';
+		echo '<div class="notice notice-success"><p>' . esc_html( $status_message ) . '</p></div>';
 	}
 
 	$partner = get_post( $partner_id );
@@ -1921,11 +1967,12 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
 				<li>
 					<div class="direktt-cross-sell-title-area">
 						<div class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></div>
-						<div class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo direktt_cross_sell_get_issue_count( $group->ID, $partner_id ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo esc_html( $issue_label ); ?></strong></div>
+						<div class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo esc_html( direktt_cross_sell_get_issue_count( $group->ID, $partner_id ) ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo esc_html( $issue_label ); ?></strong></div>
 					</div>
 					<form method="post" action="" style="display:inline;" class="direktt-cs-issue-form">
                         <?php
-                        echo Direktt_Public::direktt_render_confirm_popup( '', __( 'Are you sure that you want to issue this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $group->post_title ) . '?' );
+						$allowed_html = wp_kses_allowed_html( 'post' );
+                        echo wp_kses( Direktt_Public::direktt_render_confirm_popup( '', __( 'Are you sure that you want to issue this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $group->post_title ) . '?' ), $allowed_html );
                         ?>
 						<input type="hidden" name="direktt_coupon_group_id" value="<?php echo esc_attr( $group->ID ); ?>">
 						<input type="hidden" name="direktt_cs_issue_coupon_nonce" value="<?php echo esc_attr( wp_create_nonce( 'direktt_cs_issue_coupon_action' ) ); ?>">
@@ -1937,7 +1984,8 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
 			?>
 		</ul>
         <?php
-        echo Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) );
+		$allowed_html = wp_kses_allowed_html( 'post' );
+        echo wp_kses( Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) ), $allowed_html );
         ?>
         <script>
             jQuery( document ).ready( function ($) {
@@ -1978,7 +2026,7 @@ function direktt_cross_sell_process_coupon_issue( $partner_id, $coupon_group_id 
 	$issued = false;
 
 	// Get receiver user ID from subscriptionId GET param
-	$direktt_receiver_user_id = isset( $_GET['subscriptionId'] ) ? sanitize_text_field( $_GET['subscriptionId'] ) : '';
+	$direktt_receiver_user_id = isset( $_GET['subscriptionId'] ) ? sanitize_text_field( wp_unslash( $_GET['subscriptionId'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Justification: not a form processing, reading a query var to know which is the current Direktt user. 
 
 	// Get coupon group properties
 	$group_validity = get_post_meta( $coupon_group_id, 'direktt_cross_sell_group_validity', true );   // days (0 = no expiry)
@@ -1991,7 +2039,7 @@ function direktt_cross_sell_process_coupon_issue( $partner_id, $coupon_group_id 
 		$coupon_expires = null;
 		if ( ! empty( $group_validity ) && intval( $group_validity ) > 0 ) {
 			$now            = current_time( 'mysql' );
-			$coupon_expires = date( 'Y-m-d H:i:s', strtotime( $now . ' + ' . intval( $group_validity ) . ' days' ) );
+			$coupon_expires = gmdate( 'Y-m-d H:i:s', strtotime( $now . ' + ' . intval( $group_validity ) . ' days' ) );
 		}
 
 		$max_issuance = get_post_meta( intval( $coupon_group_id ), 'direktt_cross_sell_max_issuance', true );
@@ -2006,7 +2054,7 @@ function direktt_cross_sell_process_coupon_issue( $partner_id, $coupon_group_id 
 
 			$coupon_guid = wp_generate_uuid4();
 
-			$inserted = $wpdb->insert(
+			$inserted = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct database insert is required here to add a record to a custom plugin table; $wpdb->insert() is the official safe WordPress method using prepared statements and proper data escaping.
 				$table,
 				array(
 					'partner_id'               => $partner_id,
@@ -2076,19 +2124,12 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 
 	$coupon_results = array();
 	if ( ! empty( $subscription_id ) ) {
-		$coupon_results = $wpdb->get_results(
-			$wpdb->prepare(
-				"
-        SELECT * FROM $table
-        WHERE direktt_receiver_user_id = %s
-          AND (coupon_expires IS NULL OR coupon_expires = '0000-00-00 00:00:00' OR coupon_expires >= %s)
-          AND coupon_valid = 1
-        ORDER BY coupon_time DESC
-    ",
-				$subscription_id,
-				$now
-			)
-		);
+		$coupon_results = $wpdb->get_results( $wpdb->prepare( " SELECT * FROM $table WHERE direktt_receiver_user_id = %s AND (coupon_expires IS NULL OR coupon_expires = '0000-00-00 00:00:00' OR coupon_expires >= %s) AND coupon_valid = 1 ORDER BY coupon_time DESC ", $subscription_id, $now ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// Justifications for phpcs ignores:
+		// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $table is built from $wpdb->prefix + literal string, $where is built from literal string + sanitized inputs.
+		// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_results() is the official WordPress method for this.
+		// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
 	}
 
 	// 3. Output Coupons
@@ -2183,12 +2224,12 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 
 			echo '<tr>';
 				echo '<td class="direktt-cross-sell-name">';
-				echo '<strong>' . $partner_name . '</strong>';
-				echo ' <br/><i>' . $group_title . '</i>';
+				echo '<strong>' . esc_html( $partner_name ) . '</strong>';
+				echo ' <br/><i>' . esc_html( $group_title ) . '</i>';
 				echo '</td>';
-				echo '<td class="direktt-cross-sell-issued">' . human_time_diff( strtotime( $issued ) ) . ' ago</td>';
-				echo '<td class="direktt-cross-sell-expires">' . $expires . '</td>';
-				echo '<td class="direktt-cross-sell-count">' . $used_count . ' / ' . ( $max_usage > 0 ? $max_usage : 'Unlimited' ) . '</td>';
+				echo '<td class="direktt-cross-sell-issued">' . esc_html( human_time_diff( strtotime( $issued ) ) ) . esc_html__( ' ago', 'direktt-cross-sell' ) . '</td>';
+				echo '<td class="direktt-cross-sell-expires">' . esc_html( $expires ) . '</td>';
+				echo '<td class="direktt-cross-sell-count">' . esc_html( $used_count . ' / ' . ( $max_usage > 0 ? $max_usage : __( 'Unlimited', 'direktt-cross-sell' ) ) ) . '</td>';
 			echo '</tr>';
 			echo '<tr class="direktt-cross-sell-actions">';
 				echo '<td colspan="2">';
@@ -2207,8 +2248,9 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 					echo '<a class="button" href="' . esc_url( $use_url ) . '">' . esc_html__( 'Use', 'direktt-cross-sell' ) . '</a>';
 				echo '</td>';
 				echo '<td colspan="3">';
-					echo '<form method="post" action="' . $invalidate_url . '" class="direktt-cross-sell-invalidate-form">';
-                    echo Direktt_Public::direktt_render_confirm_popup( '', __( 'Are you sure that you want to issue this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $group_title ) . ' (' . esc_html__( 'Issued:', 'direktt-cross-sell' ) . ' ' . $issued . '?' );
+					echo '<form method="post" action="' . esc_url( $invalidate_url ) . '" class="direktt-cross-sell-invalidate-form">';
+					$allowed_html = wp_kses_allowed_html( 'post' );
+                    echo wp_kses( Direktt_Public::direktt_render_confirm_popup( '', __( 'Are you sure that you want to issue this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $group_title ) . ' (' . esc_html__( 'Issued:', 'direktt-cross-sell' ) . ' ' . $issued . '?' ), $allowed_html );
 					echo '<input type="hidden" name="direktt_cs_invalidate_coupon_nonce" value="' . esc_attr( wp_create_nonce( 'direktt_cs_invalidate_coupon_action' ) ) . '">';
 					echo '<input type="hidden" name="invalid_coupon_id" value="' . esc_attr( $row->ID ) . '">';
 					echo '<input type="submit" name="direktt_cs_invalidate_coupon_btn" class="button button-red button-invert" value="' . esc_attr__( 'Invalidate', 'direktt-cross-sell' ) . '">';
@@ -2219,7 +2261,8 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 		echo '</tbody></table>';
 	}
 	echo '</div>';
-    echo Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) );
+	$allowed_html = wp_kses_allowed_html( 'post' );
+    echo wp_kses( Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) ), $allowed_html );
 	?>
     <script>
         jQuery( document ).ready( function ($) {
@@ -2265,19 +2308,12 @@ function direktt_cross_sell_my_coupons() {
 
 	$coupon_results = array();
 	if ( ! empty( $subscription_id ) ) {
-		$coupon_results = $wpdb->get_results(
-			$wpdb->prepare(
-				"
-        SELECT * FROM $table
-        WHERE direktt_receiver_user_id = %s
-          AND (coupon_expires IS NULL OR coupon_expires = '0000-00-00 00:00:00' OR coupon_expires >= %s)
-          AND coupon_valid = 1
-        ORDER BY coupon_time DESC
-    ",
-				$subscription_id,
-				$now
-			)
-		);
+		$coupon_results = $wpdb->get_results( $wpdb->prepare( " SELECT * FROM $table WHERE direktt_receiver_user_id = %s AND (coupon_expires IS NULL OR coupon_expires = '0000-00-00 00:00:00' OR coupon_expires >= %s) AND coupon_valid = 1 ORDER BY coupon_time DESC", $subscription_id, $now ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// Justifications for phpcs ignores:
+		// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $table is built from $wpdb->prefix + literal string, $where is built from literal string + sanitized inputs.
+		// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_results() is the official WordPress method for this.
+		// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
 	}
 
 	// 3. Output Coupons
@@ -2369,10 +2405,10 @@ function direktt_cross_sell_my_coupons() {
 			$used_count = direktt_cross_sell_get_used_count( intval( $row->ID ) );
 
 			echo '<tr>';
-			echo '<td class="direktt-cross-sell-name"><strong>' . $group_title . '</strong><br/><i>' . $partner_name . '</i></td>';
-			echo '<td>' . human_time_diff( strtotime( $issued ) ) . ' ago</td>';
-			echo '<td>' . $expires . '</td>';
-			echo '<td>' . $used_count . ' / ' . ( $max_usage > 0 ? $max_usage : 'Unlimited' ) . '</td>';
+			echo '<td class="direktt-cross-sell-name"><strong>' . esc_html( $group_title ) . '</strong><br/><i>' . esc_html( $partner_name ) . '</i></td>';
+			echo '<td>' . esc_html( human_time_diff( strtotime( $issued ) ) ) . esc_html__( ' ago', 'direktt-cross-sell' ) . '</td>';
+			echo '<td>' . esc_html( $expires ) . '</td>';
+			echo '<td>' . esc_html( $used_count . ' / ' . ( $max_usage > 0 ? $max_usage : esc_html__( 'Unlimited', 'direktt-cross-sell' ) ) ) . '</td>';
 			$coupon_url = add_query_arg(
 				array(
 					'direktt_action' => 'view_coupon',
@@ -2407,21 +2443,22 @@ function direktt_cross_sell_display_coupon_info_table( $opts ) {
 	$used_count        = $opts['used_count'];
 	$max_usage         = $opts['max_usage'];
 
-	$partner_name = $partner_post ? esc_html( $partner_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
-	$group_title  = $coupon_group_post ? esc_html( $coupon_group_post->post_title ) : esc_html__( 'Unknown', 'direktt-cross-sell' );
-	$group_descr  = $coupon_group_post ? wp_kses_post( $coupon_group_post->post_content ) : '';
+	$partner_name = $partner_post ? $partner_post->post_title : esc_html__( 'Unknown', 'direktt-cross-sell' );
+	$group_title  = $coupon_group_post ? $coupon_group_post->post_title : esc_html__( 'Unknown', 'direktt-cross-sell' );
+	$group_descr  = $coupon_group_post ? $coupon_group_post->post_content : '';
 
-	echo '<h3>' . $group_title . '</h3>';
+	echo '<h3>' . esc_html( $group_title ) . '</h3>';
 	echo '<table class="direktt-cross-sell-issued-coupon-table">';
 		echo '<thead>';
-			echo '<tr><th>' . esc_html__( 'Partner', 'direktt-cross-sell' ) . '</th><td>' . $partner_name . '</td></tr>';
+			echo '<tr><th>' . esc_html__( 'Partner', 'direktt-cross-sell' ) . '</th><td>' . esc_html( $partner_name ) . '</td></tr>';
 		echo '</thead>';
 		echo '<tbody>';
-			echo '<tr><th>' . esc_html__( 'Description', 'direktt-cross-sell' ) . '</th><td>' . $group_descr . '</td></tr>';
-			echo '<tr><th>' . esc_html__( 'Issued', 'direktt-cross-sell' ) . '</th><td>' . human_time_diff( strtotime( $issued_date ) ) . '</td></tr>';
-			echo '<tr><th>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</th><td>' . $expires . '</td></tr>';
+			echo '<tr><th>' . esc_html__( 'Description', 'direktt-cross-sell' ) . '</th><td>' . wp_kses_post( $group_descr ) . '</td></tr>';
+			echo '<tr><th>' . esc_html__( 'Issued', 'direktt-cross-sell' ) . '</th><td>' . esc_html( human_time_diff( strtotime( $issued_date ) ) ) . '</td></tr>';
+			echo '<tr><th>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</th><td>' . esc_html( $expires ) . '</td></tr>';
 			echo '<tr><th>' . esc_html__( 'Usages', 'direktt-cross-sell' ) . '</th><td>';
 			printf(
+				// translators: %1$s is the used count, %2$s is the max usage limit (or 'Unlimited')
 				esc_html__( '%1$s / %2$s', 'direktt-cross-sell' ),
 				esc_html( $used_count ),
 				( $max_usage == 0 ? esc_html__( 'Unlimited', 'direktt-cross-sell' ) : esc_html( $max_usage ) )
@@ -2436,13 +2473,12 @@ function direktt_cross_sell_get_partner_and_group_by_coupon_guid( $coupon_guid )
 	$table       = $wpdb->prefix . 'direktt_cross_sell_issued';
 	$coupon_guid = sanitize_text_field( $coupon_guid );
 
-	$result = $wpdb->get_row(
-		$wpdb->prepare(
-			"SELECT partner_id, coupon_group_id FROM $table WHERE coupon_guid = %s LIMIT 1",
-			$coupon_guid
-		),
-		ARRAY_A
-	);
+	$result = $wpdb->get_row( $wpdb->prepare( "SELECT partner_id, coupon_group_id FROM $table WHERE coupon_guid = %s LIMIT 1", $coupon_guid ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+	// Justifications for phpcs ignores:
+	// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $table is built from $wpdb->prefix + literal string, $where is built from literal string + sanitized inputs.
+	// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_results() is the official WordPress method for this.
+	// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
 
 	return $result ? $result : false;
 }
@@ -2495,14 +2531,14 @@ function direktt_cross_sell_coupon_validation() {
     $direktt_cs_enqueue_popup_styles = true;
 
 	if ( isset( $_GET['coupon_code'] ) ) {
-		$coupon_code     = sanitize_text_field( $_GET['coupon_code'] );
+		$coupon_code     = sanitize_text_field( wp_unslash( $_GET['coupon_code'] ) );
 		$additional_data = direktt_cross_sell_get_partner_and_group_by_coupon_guid( $coupon_code );
 		if ( $additional_data ) {
 			$coupon_id  = $additional_data['coupon_group_id'];
 			$partner_id = $additional_data['partner_id'];
 		} else {
 			ob_start();
-			echo esc_html__( 'The coupon code is not valid', 'direktt-cross-sell' );
+			echo '<div class="notice notice-error"><p>' . esc_html__( 'The coupon code is not valid', 'direktt-cross-sell' ) . '</p></div>';
 			return ob_get_clean();
 		}
 	} elseif ( isset( $_GET['coupon_id'] ) && isset( $_GET['partner_id'] ) ) {
@@ -2510,13 +2546,13 @@ function direktt_cross_sell_coupon_validation() {
 		$partner_id = intval( $_GET['partner_id'] );
 	} else {
         ob_start();
-        echo esc_html__( 'The referenced coupon does not exist or you are not authorized to manage it.', 'direktt-cross-sell' );
+        echo '<div class="notice notice-error"><p>' . esc_html__( 'The referenced coupon does not exist or you are not authorized to manage it.', 'direktt-cross-sell' ) . '</p></div>';
 		return ob_get_clean();
 	}
     
 	if ( ! direktt_cross_sell_user_can_validate( $partner_id ) ) {
         ob_start();
-        echo esc_html__( 'The referenced coupon does not exist or you are not authorized to manage it.', 'direktt-cross-sell' );
+        echo '<div class="notice notice-error"><p>' . esc_html__( 'The referenced coupon does not exist or you are not authorized to manage it.', 'direktt-cross-sell' ) . '</p></div>';
         return ob_get_clean();
 	}
 
@@ -2525,7 +2561,12 @@ function direktt_cross_sell_coupon_validation() {
 	if ( isset( $coupon_code ) ) {
 
 		$table  = $wpdb->prefix . 'direktt_cross_sell_issued';
-		$coupon = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE coupon_guid = %s", $coupon_code ) );
+		$coupon = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE coupon_guid = %s", $coupon_code ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// Justifications for phpcs ignores:
+		// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $table is built from $wpdb->prefix + literal string, $where is built from literal string + sanitized inputs.
+		// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_results() is the official WordPress method for this.
+		// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
 		if ( ! $coupon ) {
 			return '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div>';
 		}
@@ -2568,7 +2609,7 @@ function direktt_cross_sell_coupon_validation() {
 		if (
 			isset( $_POST['direktt_cs_use_coupon'] ) &&
 			isset( $_POST['direktt_cs_use_coupon_nonce'] ) &&
-			wp_verify_nonce( $_POST['direktt_cs_use_coupon_nonce'], 'direktt_cs_use_coupon_action' )
+			wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['direktt_cs_use_coupon_nonce'] ) ), 'direktt_cs_use_coupon_action' )
 		) {
 			// This will redirect/exit as needed after processing
 			direktt_cross_sell_process_use_coupon( $coupon );
@@ -2593,7 +2634,7 @@ function direktt_cross_sell_coupon_validation() {
 		echo '<div id="direktt-profile-wrapper">';
 		echo '<div id="direktt-profile">';
 		echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service">';
-		echo $notice;
+		echo wp_kses_post( $notice );
 		direktt_cross_sell_display_coupon_info_table(
 			array(
 				'partner_post'      => $partner_post,
@@ -2610,8 +2651,9 @@ function direktt_cross_sell_coupon_validation() {
 			?>
 			<form method="post" action="">
                 <?php
-                echo Direktt_Public::direktt_render_confirm_popup( 'direktt-cross-sell-confirm-use', __( 'Are you sure that you want to use this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $coupon_group_post->post_title ) . '?' );
-                echo Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) );
+				$allowed_html = wp_kses_allowed_html( 'post' );
+                echo wp_kses( Direktt_Public::direktt_render_confirm_popup( 'direktt-cross-sell-confirm-use', __( 'Are you sure that you want to use this coupon for:', 'direktt-cross-sell' ) . ' ' . esc_html( $coupon_group_post->post_title ) . '?' ), $allowed_html );
+                echo wp_kses( Direktt_Public::direktt_render_loader( __( 'Don\'t refresh the page', 'direktt-cross-sell' ) ), $allowed_html );
                 ?>
 				<input type="hidden" name="direktt_cs_use_coupon_nonce" value="<?php echo esc_attr( wp_create_nonce( 'direktt_cs_use_coupon_action' ) ); ?>">
 				<input type="button" name="direktt_cs_use_coupon_btn" class="button button-primary button-large" value="<?php echo esc_attr__( 'Use Coupon', 'direktt-cross-sell' ); ?>">
@@ -2664,9 +2706,13 @@ function direktt_cross_sell_process_coupon_invalidate() {
 		isset( $_POST['direktt_cs_invalidate_coupon'] ) &&
 		isset( $_POST['invalid_coupon_id'] ) &&
 		isset( $_POST['direktt_cs_invalidate_coupon_nonce'] ) &&
-		wp_verify_nonce( $_POST['direktt_cs_invalidate_coupon_nonce'], 'direktt_cs_invalidate_coupon_action' )
+		wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['direktt_cs_invalidate_coupon_nonce'] ) ), 'direktt_cs_invalidate_coupon_action' )
 	) {
-		$updated = $wpdb->update(
+		$updated = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+			// Justifications for phpcs ignores:
+			// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct database update is required for this custom plugin table; $wpdb->update() safely uses prepared statements.
+			// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not needed because we want to update the table immediately with live data.
 			$table,
 			array( 'coupon_valid' => 0 ),
 			array( 'ID' => intval( $_POST['invalid_coupon_id'] ) ),
@@ -2683,23 +2729,23 @@ function direktt_cross_sell_process_coupon_invalidate() {
 
 function direktt_cross_sell_render_profile_tool() {
 	// --- Show Use Coupon Screen ---
-	if ( isset( $_GET['direktt_action'] ) && $_GET['direktt_action'] === 'use_coupon' && isset( $_GET['coupon_id'] ) ) {
+	if ( isset( $_GET['direktt_action'] ) && $_GET['direktt_action'] === 'use_coupon' && isset( $_GET['coupon_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Justification: Not processing form submission, using query var for content rendering.
 
-		direktt_cross_sell_render_use_coupon( intval( $_GET['coupon_id'] ) );
+		direktt_cross_sell_render_use_coupon( intval( $_GET['coupon_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Justification: Not processing form submission, using query var for content rendering.
 		return;
 	}
 
 	// --- Show Partner Screen ---
 
-	if ( isset( $_GET['direktt_action'] ) && $_GET['direktt_action'] === 'view_partner_coupons' && isset( $_GET['direktt_partner_id'] ) ) {
+	if ( isset( $_GET['direktt_action'] ) && $_GET['direktt_action'] === 'view_partner_coupons' && isset( $_GET['direktt_partner_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Justification: Not processing form submission, using query var for content rendering.
 
-		direktt_cross_sell_render_one_partner( intval( $_GET['direktt_partner_id'] ) );
+		direktt_cross_sell_render_one_partner( intval( $_GET['direktt_partner_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Justification: Not processing form submission, using query var for content rendering.
 		return;
 	}
 
 	// --- Process Coupon invalidation -- invalidate_coupon
 
-	if ( isset( $_GET['direktt_action'] ) && $_GET['direktt_action'] === 'invalidate_coupon' ) {
+	if ( isset( $_GET['direktt_action'] ) && $_GET['direktt_action'] === 'invalidate_coupon' ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Justification: Not processing form submission, using query var for content rendering.
 		direktt_cross_sell_process_coupon_invalidate();
 	}
 
@@ -2707,7 +2753,7 @@ function direktt_cross_sell_render_profile_tool() {
 	direktt_cross_sell_render_partners();
 
 	// Show issued coupon list for review-capable users, if subscriptionId is present
-	$subscription_id = isset( $_GET['subscriptionId'] ) ? sanitize_text_field( $_GET['subscriptionId'] ) : '';
+	$subscription_id = isset( $_GET['subscriptionId'] ) ? sanitize_text_field( wp_unslash( $_GET['subscriptionId'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Justification: Not processing form submission, using query var for content rendering.
 	if ( direktt_cross_sell_user_can_review() && ! empty( $subscription_id ) ) {
 		direktt_cross_sell_render_issued( $subscription_id );
 	}
@@ -2719,23 +2765,26 @@ function direktt_cross_sell_user_tool() {
 	$table = $wpdb->prefix . 'direktt_cross_sell_issued';
 	$now   = current_time( 'mysql' );
 	if ( ! $direktt_user ) {
-		return esc_html__( 'You must be logged in to view your coupons.', 'direktt-cross-sell' );
+		ob_start();
+		echo '<div id="direktt-profile-wrapper">';
+		echo '<div id="direktt-profile">';
+		echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service">';
+		echo '<div class="notice notice-error"><p>' . esc_html__( 'You must be logged in to view your coupons.', 'direktt-cross-sell' ) . '</p></div>';
+		echo '</div>';
+		echo '</div>';
+		echo '</div>';
+		return ob_get_clean();
 	}
 	$subscription_id = $direktt_user['direktt_user_id'];
 
 	if ( isset( $_GET['direktt_action'] ) && $_GET['direktt_action'] === 'view_coupon' && isset( $_GET['coupon_id'] ) ) {
-		$coupons = $wpdb->get_results(
-			$wpdb->prepare(
-				"
-            SELECT * FROM $table
-            WHERE ID = %d
-            AND direktt_receiver_user_id = %s
-            AND coupon_valid = 1
-        ",
-				intval( $_GET['coupon_id'] ),
-				$subscription_id
-			)
-		);
+		$coupons = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table WHERE ID = %d AND direktt_receiver_user_id = %s AND coupon_valid = 1 ", intval( $_GET['coupon_id'] ), $subscription_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.Security.NonceVerification.Recommended
+
+		// Justifications for phpcs ignores:
+		// WordPress.DB.PreparedSQL.InterpolatedNotPrepared: $table is built from $wpdb->prefix + literal string, $where is built from literal string + sanitized inputs.
+		// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_results() is the official WordPress method for this.
+		// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
+		// WordPress.Security.NonceVerification.Recommended: Not a form processing, reading a query val for rendering purposes of coupon.
 
         ob_start();
 		echo '<div id="direktt-profile-wrapper">';
@@ -2776,26 +2825,24 @@ function direktt_cross_sell_user_tool() {
 		$check_slug     = get_option( 'direktt_cross_sell_check_slug' );
 		$validation_url = site_url( $check_slug, 'https' );
 
-		$actionObject = json_encode(
-			array(
-				'action' => array(
-					'type'    => 'link',
-					'params'  => array(
-						'url'    => $validation_url,
-						'target' => 'app',
-					),
-					'retVars' => array(
-						'coupon_code' => $coupon->coupon_guid,
-					),
+		$actionObject = array(
+			'action' => array(
+				'type'    => 'link',
+				'params'  => array(
+					'url'    => $validation_url,
+					'target' => 'app',
 				),
-			)
+				'retVars' => array(
+					'coupon_code' => $coupon->coupon_guid,
+				),
+			),
 		);
 
 		global $enqueue_direktt_cross_sell_scripts;
 		$enqueue_direktt_cross_sell_scripts = true;
 
 		?>
-		<div class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></div>
+		<h2 class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></h2>
 		<h2 class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></h2>
 		<div class="direktt-cross-sell-qr-canvas-wrapper">
 			<div id="direktt-cross-sell-qr-canvas"></div>
@@ -2807,7 +2854,7 @@ function direktt_cross_sell_user_tool() {
 				width: 350,
 				height: 350,
 				type: "svg",
-				data: '<?php echo $actionObject; ?>',
+				data: '<?php echo wp_json_encode( $actionObject ); ?>',
 				image: '<?php echo $qr_code_image ? esc_js( $qr_code_image ) : ''; ?>',
 				dotsOptions: {
 					color: '<?php echo $qr_code_color ? esc_js( $qr_code_color ) : '#000000'; ?>',
@@ -2822,7 +2869,7 @@ function direktt_cross_sell_user_tool() {
 				}
 			});
 
-			qrCode.append(document.getElementById("canvas"));
+			qrCode.append(document.getElementById("direktt-cross-sell-qr-canvas"));
 			/* qrCode.download({
 				name: "qr",
 				extension: "svg"
@@ -2849,7 +2896,7 @@ function direktt_cross_sell_user_tool() {
 			isset( $_POST['direktt_cs_issue_coupon'] ) &&
 			isset( $_POST['direktt_coupon_group_id'] ) &&
 			isset( $_POST['direktt_cs_issue_coupon_nonce'] ) &&
-			wp_verify_nonce( $_POST['direktt_cs_issue_coupon_nonce'], 'direktt_cs_issue_coupon_action' )
+			wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['direktt_cs_issue_coupon_nonce'] ) ), 'direktt_cs_issue_coupon_action' )
 		) {
 
 			$qr_code_image    = get_post_meta( intval( $partner_id ), 'direktt_cross_sell_qr_code_image', true );
@@ -2877,21 +2924,19 @@ function direktt_cross_sell_user_tool() {
                 return ob_get_clean();
             }
 
-			$actionObject = json_encode(
-				array(
-					'action' => array(
-						'type'    => 'api',
-						'params'  => array(
-							'actionType'     => 'issue_coupon',
-							'successMessage' => 'Coupon has been succesfully issued!',
-						),
-						'retVars' => array(
-							'partner_id'      => sanitize_text_field( $partner_id ),
-							'coupon_group_id' => sanitize_text_field( $_POST['direktt_coupon_group_id'] ),
-							'issuer_id'       => $subscription_id,
-						),
+			$actionObject = array(
+				'action' => array(
+					'type'    => 'api',
+					'params'  => array(
+						'actionType'     => 'issue_coupon',
+						'successMessage' => 'Coupon has been succesfully issued!',
 					),
-				)
+					'retVars' => array(
+						'partner_id'      => sanitize_text_field( $partner_id ),
+						'coupon_group_id' => sanitize_text_field( wp_unslash( $_POST['direktt_coupon_group_id'] ) ),
+						'issuer_id'       => $subscription_id,
+					),
+				),
 			);
 
 			global $enqueue_direktt_cross_sell_scripts;
@@ -2911,7 +2956,7 @@ function direktt_cross_sell_user_tool() {
 					width: 350,
 					height: 350,
 					type: "svg",
-					data: '<?php echo $actionObject; ?>',
+					data: '<?php echo wp_json_encode( $actionObject ); ?>',
 					image: '<?php echo $qr_code_image ? esc_js( $qr_code_image ) : ''; ?>',
 					dotsOptions: {
 						color: '<?php echo $qr_code_color ? esc_js( $qr_code_color ) : '#000000'; ?>',
@@ -3011,7 +3056,7 @@ function direktt_cross_sell_user_tool() {
 					<li>
 						<div class="direktt-cross-sell-title-area">
 							<div class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></div>
-							<div class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo direktt_cross_sell_get_issue_count( $group->ID, $partner_id ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo $issue_label; ?></strong></div>
+							<div class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo esc_html( direktt_cross_sell_get_issue_count( $group->ID, $partner_id ) ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo esc_html( $issue_label ); ?></strong></div>
 						</div>
 						<form method="post" action="" style="display:inline;" class="direktt-cs-issue-form">
 							<input type="hidden" name="direktt_coupon_group_id" value="<?php echo esc_attr( $group->ID ); ?>">
@@ -3037,7 +3082,7 @@ function direktt_cross_sell_user_tool() {
 	echo '<div id="direktt-profile-wrapper">';
 	echo '<div id="direktt-profile">';
 	echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service">';
-	echo direktt_cross_sell_my_coupons();
+	echo wp_kses_post( direktt_cross_sell_my_coupons() );
 	$partners          = direktt_cross_sell_get_partners();
 	$eligible_partners = array();
 	$category_ids      = Direktt_User::get_user_categories( $direktt_user['ID'] );
@@ -3070,7 +3115,7 @@ function direktt_cross_sell_user_tool() {
 				'post_type'      => 'direkttcspartners',
 				'post_status'    => 'publish',
 				'posts_per_page' => -1,
-				'meta_query'     => $meta_query,
+				'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- - Justification: bounded, cached, selective query on small dataset
 			);
 
 			$partners_with_cat_tag = get_posts( $args );
@@ -3155,7 +3200,7 @@ function direktt_cross_sell_on_issue_coupon( $request ) {
 		$coupon_expires = null;
 		if ( ! empty( $group_validity ) && intval( $group_validity ) > 0 ) {
 			$now            = current_time( 'mysql' );
-			$coupon_expires = date( 'Y-m-d H:i:s', strtotime( $now . ' + ' . intval( $group_validity ) . ' days' ) );
+			$coupon_expires = gmdate( 'Y-m-d H:i:s', strtotime( $now . ' + ' . intval( $group_validity ) . ' days' ) );
 		}
 
 		$max_issuance = get_post_meta( intval( $coupon_group_id ), 'direktt_cross_sell_max_issuance', true );
@@ -3170,7 +3215,7 @@ function direktt_cross_sell_on_issue_coupon( $request ) {
 
 			$coupon_guid = wp_generate_uuid4();
 
-			$inserted = $wpdb->insert(
+			$inserted = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct database insert is required here to add a record to a custom plugin table; $wpdb->insert() is the official safe WordPress method using prepared statements and proper data escaping.
 				$table,
 				array(
 					'partner_id'               => $partner_id,
