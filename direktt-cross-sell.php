@@ -14,6 +14,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+$direktt_cross_sell_plugin_version = "1.0.3";
+$direktt_cross_sell_github_update_cache_allowed = true;
+
+require_once plugin_dir_path( __FILE__ ) . 'direktt-github-updater/class-direktt-github-updater.php';
+
+$direktt_cross_sell_plugin_github_updater  = new Direktt_Github_Updater( 
+    $direktt_cross_sell_plugin_version, 
+    'direktt-cross-sell/direktt-cross-sell.php',
+    'https://raw.githubusercontent.com/direktt/direktt-cross-sell/master/info.json',
+    'direktt_cross_sell_github_updater',
+    $direktt_cross_sell_github_update_cache_allowed );
+
+add_filter( 'plugins_api', array( $direktt_cross_sell_plugin_github_updater, 'github_info' ), 20, 3 );
+add_filter( 'site_transient_update_plugins', array( $direktt_cross_sell_plugin_github_updater, 'github_update' ));
+add_filter( 'upgrader_process_complete', array( $direktt_cross_sell_plugin_github_updater, 'purge'), 10, 2 );
+
 add_action( 'plugins_loaded', 'direktt_cross_sell_activation_check', -20 );
 
 // Settings Page
