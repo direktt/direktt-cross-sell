@@ -2795,7 +2795,7 @@ function direktt_cross_sell_user_tool() {
 		$enqueue_direktt_cross_sell_scripts = true;
 
 		?>
-		<div class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></div>
+		<p class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></p>
 		<h2 class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></h2>
 		<div class="direktt-cross-sell-qr-canvas-wrapper">
 			<div id="direktt-cross-sell-qr-canvas"></div>
@@ -2899,7 +2899,7 @@ function direktt_cross_sell_user_tool() {
 
 			?>
 
-            <div class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></div>
+            <p class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></p>
             <h2 class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></h2>
 			<div class="direktt-cross-sell-qr-canvas-wrapper">
 				<div id="direktt-cross-sell-qr-canvas"></div>
