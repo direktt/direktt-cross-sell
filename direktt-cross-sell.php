@@ -1184,7 +1184,7 @@ function direktt_cross_sell_partners_enqueue_scripts( $hook ) {
 			'qr-code-styling', // Handle
 			plugin_dir_url( __FILE__ ) . 'assets/js/qr-code-styling.js', // Source
 			array(), // Dependencies (none in this case)
-			filetime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
+			filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
 			true
 		);
 	}
@@ -1197,7 +1197,7 @@ function direktt_cross_sell_enqueue_fe_scripts( $hook ) {
 			'qr-code-styling', // Handle
 			plugin_dir_url( __FILE__ ) . 'assets/js/qr-code-styling.js', // Source
 			array(), // Dependencies (none in this case)
-			filetime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
+			filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
 			true
 		);
 	}
