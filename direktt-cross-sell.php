@@ -1982,8 +1982,8 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
 				?>
 				<li>
 					<div class="direktt-cross-sell-title-area">
-						<div class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></div>
-						<div class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo esc_html( direktt_cross_sell_get_issue_count( $group->ID, $partner_id ) ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo esc_html( $issue_label ); ?></strong></div>
+						<h3 class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></h3>
+						<p class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo esc_html( direktt_cross_sell_get_issue_count( $group->ID, $partner_id ) ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo esc_html( $issue_label ); ?></strong></p>
 					</div>
 					<form method="post" action="" style="display:inline;" class="direktt-cs-issue-form">
                         <?php
@@ -3075,8 +3075,8 @@ function direktt_cross_sell_user_tool() {
 					?>
 					<li>
 						<div class="direktt-cross-sell-title-area">
-							<div class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></div>
-							<div class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo esc_html( direktt_cross_sell_get_issue_count( $group->ID, $partner_id ) ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo esc_html( $issue_label ); ?></strong></div>
+							<h3 class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></h3>
+							<p class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo esc_html( direktt_cross_sell_get_issue_count( $group->ID, $partner_id ) ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo esc_html( $issue_label ); ?></strong></p>
 						</div>
 						<form method="post" action="" style="display:inline;" class="direktt-cs-issue-form">
 							<input type="hidden" name="direktt_coupon_group_id" value="<?php echo esc_attr( $group->ID ); ?>">
