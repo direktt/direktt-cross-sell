@@ -1182,10 +1182,10 @@ function direktt_cross_sell_partners_enqueue_scripts( $hook ) {
 		wp_enqueue_script( 'wp-color-picker' );
 		wp_enqueue_script(
 			'qr-code-styling', // Handle
-			plugin_dir_url( __FILE__ ) . 'assets/js/qr-code-styling.js', // Source
+			plugin_dir_url( __DIR__ ) . 'direktt/public/js/qr-code-styling.js', // Source
 			array(), // Dependencies (none in this case)
-			filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
-			true
+			filemtime( plugin_dir_path( __DIR__ ) . 'direktt/public/js/qr-code-styling.js' ),
+			false
 		);
 	}
 }
@@ -1195,10 +1195,10 @@ function direktt_cross_sell_enqueue_fe_scripts( $hook ) {
 	if ( $enqueue_direktt_cross_sell_scripts ) {
 		wp_enqueue_script(
 			'qr-code-styling', // Handle
-			plugin_dir_url( __FILE__ ) . 'assets/js/qr-code-styling.js', // Source
+			plugin_dir_url( __DIR__ ) . 'direktt/public/js/qr-code-styling.js', // Source
 			array(), // Dependencies (none in this case)
-			filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
-			true
+			filemtime( plugin_dir_path( __DIR__ ) . 'direktt/public/js/qr-code-styling.js' ),
+			false
 		);
 	}
 }
@@ -2858,11 +2858,7 @@ function direktt_cross_sell_user_tool() {
 		$enqueue_direktt_cross_sell_scripts = true;
 
 		?>
-<<<<<<< HEAD
-		<p class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></p>
-=======
 		<h2 class="direktt-cross-sell-title"><?php echo esc_html( $partner_post->post_title ); ?></h2>
->>>>>>> 0e0dfb0d90d56e5cf9162f94424dfa907cc983cc
 		<h2 class="direktt-cross-sell-title"><?php echo esc_html( $coupon_group_post->post_title ); ?></h2>
 		<div class="direktt-cross-sell-qr-canvas-wrapper">
 			<div id="direktt-cross-sell-qr-canvas"></div>
