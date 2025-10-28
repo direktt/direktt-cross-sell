@@ -1182,10 +1182,10 @@ function direktt_cross_sell_partners_enqueue_scripts( $hook ) {
 		wp_enqueue_script( 'wp-color-picker' );
 		wp_enqueue_script(
 			'qr-code-styling', // Handle
-			plugin_dir_url( __FILE__ ) . 'assets/js/qr-code-styling.js', // Source
+			plugin_dir_url( __DIR__ ) . 'direktt/public/js/qr-code-styling.js', // Source
 			array(), // Dependencies (none in this case)
-			filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
-			true
+			filemtime( plugin_dir_path( __DIR__ ) . 'direktt/public/js/qr-code-styling.js' ),
+			false
 		);
 	}
 }
@@ -1195,10 +1195,10 @@ function direktt_cross_sell_enqueue_fe_scripts( $hook ) {
 	if ( $enqueue_direktt_cross_sell_scripts ) {
 		wp_enqueue_script(
 			'qr-code-styling', // Handle
-			plugin_dir_url( __FILE__ ) . 'assets/js/qr-code-styling.js', // Source
+			plugin_dir_url( __DIR__ ) . 'direktt/public/js/qr-code-styling.js', // Source
 			array(), // Dependencies (none in this case)
-			filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
-			true
+			filemtime( plugin_dir_path( __DIR__ ) . 'direktt/public/js/qr-code-styling.js' ),
+			false
 		);
 	}
 }
