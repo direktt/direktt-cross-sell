@@ -2466,13 +2466,13 @@ function direktt_cross_sell_display_coupon_info_table( $opts ) {
 	echo '<h3>' . esc_html( $group_title ) . '</h3>';
 	echo '<table class="direktt-cross-sell-issued-coupon-table">';
 		echo '<thead>';
-			echo '<tr><th>' . esc_html__( 'Partner', 'direktt-cross-sell' ) . '</th><td>' . esc_html( $partner_name ) . '</td></tr>';
+			echo '<tr><td>' . esc_html__( 'Partner', 'direktt-cross-sell' ) . '</td><td>' . esc_html( $partner_name ) . '</td></tr>';
 		echo '</thead>';
 		echo '<tbody>';
-			echo '<tr><th>' . esc_html__( 'Description', 'direktt-cross-sell' ) . '</th><td>' . wp_kses_post( $group_descr ) . '</td></tr>';
-			echo '<tr><th>' . esc_html__( 'Issued', 'direktt-cross-sell' ) . '</th><td>' . esc_html( human_time_diff( strtotime( $issued_date ) ) ) . '</td></tr>';
-			echo '<tr><th>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</th><td>' . esc_html( $expires ) . '</td></tr>';
-			echo '<tr><th>' . esc_html__( 'Usages', 'direktt-cross-sell' ) . '</th><td>';
+			echo '<tr><td>' . esc_html__( 'Description', 'direktt-cross-sell' ) . '</td><td>' . wp_kses_post( $group_descr ) . '</td></tr>';
+			echo '<tr><td>' . esc_html__( 'Issued', 'direktt-cross-sell' ) . '</td><td>' . esc_html( human_time_diff( strtotime( $issued_date ) ) ) . '</td></tr>';
+			echo '<tr><td>' . esc_html__( 'Expires', 'direktt-cross-sell' ) . '</td><td>' . esc_html( $expires ) . '</td></tr>';
+			echo '<tr><td>' . esc_html__( 'Usages', 'direktt-cross-sell' ) . '</td><td>';
 			printf(
 				// translators: %1$s is the used count, %2$s is the max usage limit (or 'Unlimited')
 				esc_html__( '%1$s / %2$s', 'direktt-cross-sell' ),
