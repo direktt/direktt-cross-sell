@@ -1182,9 +1182,9 @@ function direktt_cross_sell_partners_enqueue_scripts( $hook ) {
 		wp_enqueue_script( 'wp-color-picker' );
 		wp_enqueue_script(
 			'qr-code-styling', // Handle
-			plugin_dir_url( __DIR__ ) . 'direktt/public/assets/js/qr-code-styling.js', // Source
+			plugin_dir_url( __FILE__ ) . 'assets/js/qr-code-styling.js', // Source
 			array(), // Dependencies (none in this case)
-			filemtime( plugin_dir_path( __DIR__ ) . 'direktt/public/assets/js/qr-code-styling.js' ),
+			filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
 			true
 		);
 	}
@@ -1195,9 +1195,9 @@ function direktt_cross_sell_enqueue_fe_scripts( $hook ) {
 	if ( $enqueue_direktt_cross_sell_scripts ) {
 		wp_enqueue_script(
 			'qr-code-styling', // Handle
-			plugin_dir_url( __DIR__ ) . 'direktt/public/assets/js/qr-code-styling.js', // Source
+			plugin_dir_url( __FILE__ ) . 'assets/js/qr-code-styling.js', // Source
 			array(), // Dependencies (none in this case)
-			filemtime( plugin_dir_path( __FILE__ ) . 'direktt/public/assets/js/qr-code-styling.js' ),
+			filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/qr-code-styling.js' ),
 			true
 		);
 	}
@@ -1982,8 +1982,8 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
 				?>
 				<li>
 					<div class="direktt-cross-sell-title-area">
-						<h3 class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></h3>
-						<p class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo esc_html( direktt_cross_sell_get_issue_count( $group->ID, $partner_id ) ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo esc_html( $issue_label ); ?></strong></p>
+						<div class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></div>
+						<div class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo esc_html( direktt_cross_sell_get_issue_count( $group->ID, $partner_id ) ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo esc_html( $issue_label ); ?></strong></div>
 					</div>
 					<form method="post" action="" style="display:inline;" class="direktt-cs-issue-form">
                         <?php
@@ -3075,8 +3075,8 @@ function direktt_cross_sell_user_tool() {
 					?>
 					<li>
 						<div class="direktt-cross-sell-title-area">
-							<h3 class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></h3>
-							<p class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo esc_html( direktt_cross_sell_get_issue_count( $group->ID, $partner_id ) ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo esc_html( $issue_label ); ?></strong></p>
+							<div class="direktt-cross-sell-title"><?php echo esc_html( $group->post_title ); ?></div>
+							<div class="direktt-cross-sell-data"><?php echo esc_html__( 'Issued:', 'direktt-cross-sell' ); ?> <span><?php echo esc_html( direktt_cross_sell_get_issue_count( $group->ID, $partner_id ) ); ?></span> <?php echo esc_html( '/' ); ?> <strong><?php echo esc_html( $issue_label ); ?></strong></div>
 						</div>
 						<form method="post" action="" style="display:inline;" class="direktt-cs-issue-form">
 							<input type="hidden" name="direktt_coupon_group_id" value="<?php echo esc_attr( $group->ID ); ?>">
