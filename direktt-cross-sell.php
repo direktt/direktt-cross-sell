@@ -45,7 +45,6 @@ register_activation_hook( __FILE__, 'direktt_cross_sell_create_used_database_tab
 // Cross-Sell Partner Meta Boxes
 add_action( 'add_meta_boxes', 'direktt_cross_sell_partners_add_custom_box' );
 add_action( 'save_post', 'save_direktt_cross_sell_partner_meta' );
-add_action( 'admin_enqueue_scripts', 'direktt_cross_sell_partners_enqueue_scripts' );
 add_action( 'wp_enqueue_scripts', 'direktt_cross_sell_enqueue_fe_scripts' );
 
 // Cross-Sell Coupon Groups Meta Boxes
@@ -82,9 +81,6 @@ add_filter( 'manage_edit-direkttcscoupon_sortable_columns', 'direktt_cross_sell_
 
 // Add sorting functionality for the Cross Sell Partner column
 add_action( 'pre_get_posts', 'direktt_cross_sell_sort_partner_column' );
-
-// Enqueue popup styles
-add_action( 'wp_enqueue_scripts', 'direktt_cross_sell_enqueue_popup_styles' );
 
 // highlight submenu when on partner/coupon group edit screen
 add_action( 'parent_file', 'direktt_cross_sell_highlight_submenu' );
@@ -174,21 +170,54 @@ function direktt_cross_sell_settings() {
 	) {
 		// Sanitize and update options
 
+		update_option( 'direktt_cross_sell_check_slug', isset( $_POST['direktt_cross_sell_check_slug'] ) ? sanitize_title( wp_unslash( $_POST['direktt_cross_sell_check_slug'] ) ) : '' );
 		update_option( 'direktt_cross_sell_issue_categories', isset( $_POST['direktt_cross_sell_issue_categories'] ) ? intval( $_POST['direktt_cross_sell_issue_categories'] ) : 0 );
 		update_option( 'direktt_cross_sell_issue_tags', isset( $_POST['direktt_cross_sell_issue_tags'] ) ? intval( $_POST['direktt_cross_sell_issue_tags'] ) : 0 );
 		update_option( 'direktt_cross_sell_review_categories', isset( $_POST['direktt_cross_sell_review_categories'] ) ? intval( $_POST['direktt_cross_sell_review_categories'] ) : 0 );
 		update_option( 'direktt_cross_sell_review_tags', isset( $_POST['direktt_cross_sell_review_tags'] ) ? intval( $_POST['direktt_cross_sell_review_tags'] ) : 0 );
-		update_option( 'direktt_cross_sell_check_slug', isset( $_POST['direktt_cross_sell_check_slug'] ) ? sanitize_title( wp_unslash( $_POST['direktt_cross_sell_check_slug'] ) ) : '' );
+		update_option( 'direktt_cross_sell_user_issuance', isset( $_POST['direktt_cross_sell_user_issuance'] ) ? 'yes' : 'no' );
+		update_option( 'direktt_cross_sell_user_issuance_template', isset( $_POST['direktt_cross_sell_user_issuance_template'] ) ? intval( $_POST['direktt_cross_sell_user_issuance_template'] ) : 0 );
+		update_option( 'direktt_cross_sell_admin_issuance', isset( $_POST['direktt_cross_sell_admin_issuance'] ) ? 'yes' : 'no' );
+		update_option( 'direktt_cross_sell_admin_issuance_template', isset( $_POST['direktt_cross_sell_admin_issuance_template'] ) ? intval( $_POST['direktt_cross_sell_admin_issuance_template'] ) : 0 );
+		update_option( 'direktt_cross_sell_user_usage', isset( $_POST['direktt_cross_sell_user_usage'] ) ? 'yes' : 'no' );
+		update_option( 'direktt_cross_sell_user_usage_template', isset( $_POST['direktt_cross_sell_user_usage_template'] ) ? intval( $_POST['direktt_cross_sell_user_usage_template'] ) : 0 );
+		update_option( 'direktt_cross_sell_admin_usage', isset( $_POST['direktt_cross_sell_admin_usage'] ) ? 'yes' : 'no' );
+		update_option( 'direktt_cross_sell_admin_usage_template', isset( $_POST['direktt_cross_sell_admin_usage_template'] ) ? intval( $_POST['direktt_cross_sell_admin_usage_template'] ) : 0 );
 
 		$success = true;
 	}
 
 	// Load stored values
-	$issue_categories  = get_option( 'direktt_cross_sell_issue_categories', 0 );
-	$issue_tags        = get_option( 'direktt_cross_sell_issue_tags', 0 );
-	$review_categories = get_option( 'direktt_cross_sell_review_categories', 0 );
-	$review_tags       = get_option( 'direktt_cross_sell_review_tags', 0 );
-	$check_slug        = get_option( 'direktt_cross_sell_check_slug' );
+	$check_slug                         = get_option( 'direktt_cross_sell_check_slug' );
+	$issue_categories                   = get_option( 'direktt_cross_sell_issue_categories', 0 );
+	$issue_tags                         = get_option( 'direktt_cross_sell_issue_tags', 0 );
+	$review_categories                  = get_option( 'direktt_cross_sell_review_categories', 0 );
+	$review_tags                        = get_option( 'direktt_cross_sell_review_tags', 0 );
+	$cross_sell_user_issuance           = get_option( 'direktt_cross_sell_user_issuance', 'no' ) === 'yes';
+	$cross_sell_user_issuance_template  = get_option( 'direktt_cross_sell_user_issuance_template', 0 );
+	$cross_sell_admin_issuance          = get_option( 'direktt_cross_sell_admin_issuance', 'no' ) === 'yes';
+	$cross_sell_admin_issuance_template = get_option( 'direktt_cross_sell_admin_issuance_template', 0 );
+	$cross_sell_user_usage              = get_option( 'direktt_cross_sell_user_usage', 'no' ) === 'yes';
+	$cross_sell_user_usage_template     = get_option( 'direktt_cross_sell_user_usage_template', 0 );
+	$cross_sell_admin_usage             = get_option( 'direktt_cross_sell_admin_usage', 'no' ) === 'yes';
+	$cross_sell_admin_usage_template    = get_option( 'direktt_cross_sell_admin_usage_template', 0 );
+
+	// Query for template posts
+    $template_args  = array(
+        'post_type'      => 'direkttmtemplates',
+        'post_status'    => 'publish',
+        'posts_per_page' => -1,
+        'orderby'        => 'title',
+        'order'          => 'ASC',
+        'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- - Justification: bounded, cached, selective query on small dataset
+            array(
+                'key'     => 'direkttMTType',
+                'value'   => array( 'all', 'none' ),
+                'compare' => 'IN',
+            ),
+        ),
+    );
+    $template_posts = get_posts( $template_args );
 
 	$all_categories = Direktt_User::get_all_user_categories();
 	$all_tags       = Direktt_User::get_all_user_tags();
@@ -203,63 +232,8 @@ function direktt_cross_sell_settings() {
 		<form method="post" action="">
 			<?php wp_nonce_field( 'direktt_admin_cross_sales_save', 'direktt_admin_cross_sales_nonce' ); ?>
 
-			<table class="form-table">
-				<tr>
-					<th scope="row"><label for="direktt_cross_sell_issue_categories"><?php esc_html_e( 'Users to Issue Coupons', 'direktt-cross-sell' ); ?></label></th>
-					<td>
-						<select name="direktt_cross_sell_issue_categories" id="direktt_cross_sell_issue_categories">
-							<option value="0"><?php echo esc_html__( 'Select Category', 'direktt-cross-sell' ); ?></option>
-							<?php foreach ( $all_categories as $category ) : ?>
-								<option value="<?php echo esc_attr( $category['value'] ); ?>" <?php selected( $issue_categories, $category['value'] ); ?>>
-									<?php echo esc_html( $category['name'] ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description"><?php esc_html_e( 'Users belonging to this category will be able to Issue Coupons.', 'direktt-cross-sell' ); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="direktt_cross_sell_issue_tags"><?php esc_html_e( 'Users to Issue Coupons', 'direktt-cross-sell' ); ?></label></th>
-					<td>
-						<select name="direktt_cross_sell_issue_tags" id="direktt_cross_sell_issue_tags">
-							<option value="0"><?php echo esc_html__( 'Select Tag', 'direktt-cross-sell' ); ?></option>
-							<?php foreach ( $all_tags as $tag ) : ?>
-								<option value="<?php echo esc_attr( $tag['value'] ); ?>" <?php selected( $issue_tags, $tag['value'] ); ?>>
-									<?php echo esc_html( $tag['name'] ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description"><?php esc_html_e( 'Users with this tag will be able to Issue Coupons.', 'direktt-cross-sell' ); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="direktt_cross_sell_review_categories"><?php esc_html_e( 'Users to Review Coupons', 'direktt-cross-sell' ); ?></label></th>
-					<td>
-						<select name="direktt_cross_sell_review_categories" id="direktt_cross_sell_review_categories">
-							<option value="0"><?php echo esc_html__( 'Select Category', 'direktt-cross-sell' ); ?></option>
-							<?php foreach ( $all_categories as $category ) : ?>
-								<option value="<?php echo esc_attr( $category['value'] ); ?>" <?php selected( $review_categories, $category['value'] ); ?>>
-									<?php echo esc_html( $category['name'] ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description"><?php esc_html_e( 'Users belonging to this category will be able to Review Coupons.', 'direktt-cross-sell' ); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="direktt_cross_sell_review_tags"><?php esc_html_e( 'Users to Review Coupons', 'direktt-cross-sell' ); ?></label></th>
-					<td>
-						<select name="direktt_cross_sell_review_tags" id="direktt_cross_sell_review_tags">
-							<option value="0"><?php echo esc_html__( 'Select Tag', 'direktt-cross-sell' ); ?></option>
-							<?php foreach ( $all_tags as $tag ) : ?>
-								<option value="<?php echo esc_attr( $tag['value'] ); ?>" <?php selected( $review_tags, $tag['value'] ); ?>>
-									<?php echo esc_html( $tag['name'] ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description"><?php esc_html_e( 'Users with this tag will be able to Review Coupons.', 'direktt-cross-sell' ); ?></p>
-					</td>
-				</tr>
+			<h2 class="title"><?php echo esc_html__( 'General Settings', 'direktt-cross-sell' ); ?></h2>
+			<table class="form-table direktt-cross-sell-table">
 				<tr>
 					<th scope="row"><label for="direktt_cross_sell_check_slug"><?php echo esc_html__( 'Coupon Validation Slug', 'direktt-cross-sell' ); ?></label></th>
 					<td>
@@ -267,6 +241,165 @@ function direktt_cross_sell_settings() {
 						<p class="description"><?php esc_html_e( 'Slug of the page with the Cross-Sell Coupon Validation shortcode', 'direktt-cross-sell' ); ?></p>
 					</td>
 				</tr>
+				<tr>
+                    <th scope="row"><label for="direktt_cross_sell_issue_categories"><?php echo esc_html__( 'Users to Issue Coupons', 'direktt-cross-sell' ); ?></label></th>
+                    <td>
+                       <fieldset class="direktt-category-tag-fieldset">
+                            <legend class="screen-reader-text"><span><?php echo esc_html__( 'Users to Issue Coupons', 'direktt-cross-sell' ); ?></span></legend>
+                            <label for="direktt_cross_sell_issue_categories"><?php echo esc_html__( 'Category', 'direktt-cross-sell' ); ?></label>
+                            <select name="direktt_cross_sell_issue_categories" id="direktt_cross_sell_issue_categories">
+								<option value="0"><?php echo esc_html__( 'Select Category', 'direktt-cross-sell' ); ?></option>
+								<?php foreach ( $all_categories as $category ) : ?>
+									<option value="<?php echo esc_attr( $category['value'] ); ?>" <?php selected( $issue_categories, $category['value'] ); ?>>
+										<?php echo esc_html( $category['name'] ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+                            <br>
+                            <label for="direktt_cross_sell_issue_tags"><?php echo esc_html__( 'Tag', 'direktt-cross-sell' ); ?></label>
+                            <select name="direktt_cross_sell_issue_tags" id="direktt_cross_sell_issue_tags">
+								<option value="0"><?php echo esc_html__( 'Select Tag', 'direktt-cross-sell' ); ?></option>
+								<?php foreach ( $all_tags as $tag ) : ?>
+									<option value="<?php echo esc_attr( $tag['value'] ); ?>" <?php selected( $issue_tags, $tag['value'] ); ?>>
+										<?php echo esc_html( $tag['name'] ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+                        </fieldset>
+                        <p class="description"><?php echo esc_html__( 'Users with this category/tag will be able to issue coupons.', 'direktt-cross-sell' ); ?></p>
+                    </td>
+                </tr>
+				<tr>
+                    <th scope="row"><label for="direktt_cross_sell_review_categories"><?php echo esc_html__( 'Users to Review Coupons', 'direktt-cross-sell' ); ?></label></th>
+                    <td>
+                       <fieldset class="direktt-category-tag-fieldset">
+                            <legend class="screen-reader-text"><span><?php echo esc_html__( 'Users to Review Coupons', 'direktt-cross-sell' ); ?></span></legend>
+                            <label for="direktt_cross_sell_review_categories"><?php echo esc_html__( 'Category', 'direktt-cross-sell' ); ?></label>
+                            <select name="direktt_cross_sell_review_categories" id="direktt_cross_sell_review_categories">
+								<option value="0"><?php echo esc_html__( 'Select Category', 'direktt-cross-sell' ); ?></option>
+								<?php foreach ( $all_categories as $category ) : ?>
+									<option value="<?php echo esc_attr( $category['value'] ); ?>" <?php selected( $review_categories, $category['value'] ); ?>>
+										<?php echo esc_html( $category['name'] ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+                            <br>
+                            <label for="direktt_cross_sell_review_tags"><?php echo esc_html__( 'Tag', 'direktt-cross-sell' ); ?></label>
+                            <select name="direktt_cross_sell_review_tags" id="direktt_cross_sell_review_tags">
+								<option value="0"><?php echo esc_html__( 'Select Tag', 'direktt-cross-sell' ); ?></option>
+								<?php foreach ( $all_tags as $tag ) : ?>
+									<option value="<?php echo esc_attr( $tag['value'] ); ?>" <?php selected( $review_tags, $tag['value'] ); ?>>
+										<?php echo esc_html( $tag['name'] ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+                        </fieldset>
+                        <p class="description"><?php echo esc_html__( 'Users with this category/tag will be able to review coupons.', 'direktt-cross-sell' ); ?></p>
+                    </td>
+                </tr>
+			</table>
+			<h2 class="title"><?php echo esc_html__( 'Messages', 'direktt-cross-sell' ); ?></h2>
+			<h3><?php echo esc_html__( 'Coupon Issuance', 'direktt-cross-sell' ); ?></h3>
+			<h3><?php echo esc_html__( 'Send to Subscriber', 'direktt-cross-sell' ); ?></h3>
+			<table class="form-table direktt-cross-sell-table">
+				<tr>
+                    <th scope="row"><label for="direktt_cross_sell_user_issuance"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
+                    <td>
+                        <input type="checkbox" name="direktt_cross_sell_user_issuance" id="direktt_cross_sell_user_issuance" value="yes" <?php checked( $cross_sell_user_issuance ); ?> />
+                        <label for="direktt_cross_sell_user_issuance"><span class="description"><?php echo esc_html__( 'When enabled, a notification will be sent to the subscriber when coupon is issued to them.', 'direktt-cross-sell' ); ?></span></label>
+                    </td>
+                </tr>
+                <tr id="direktt-cross-sell-settings-mt-user-issuance-row">
+                    <th scope="row"><label for="direktt_cross_sell_user_issuance_template"><?php echo esc_html__( 'Message Template', 'direktt-cross-sell' ); ?></label></th>
+                    <td>
+                        <select name="direktt_cross_sell_user_issuance_template" id="direktt_cross_sell_user_issuance_template">
+                            <option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
+                            <?php foreach ( $template_posts as $post ) : ?>
+                                <option value="<?php echo esc_attr( $post->ID ); ?>" <?php selected( $cross_sell_user_issuance_template, $post->ID ); ?>>
+                                    <?php echo esc_html( $post->post_title ); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="description"><?php echo esc_html__( 'You can use following dynamic placeholders in this template:', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#TODO#' ); ?></code><?php echo esc_html__( ' - TODO.', 'direktt-cross-sell' ); ?></p>
+                    </td>
+                </tr>
+			</table>
+			<h3><?php echo esc_html__( 'Send to Admin', 'direktt-cross-sell' ); ?></h3>
+			<table class="form-table direktt-cross-sell-table">
+				<tr>
+                    <th scope="row"><label for="direktt_cross_sell_admin_issuance"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
+                    <td>
+                        <input type="checkbox" name="direktt_cross_sell_admin_issuance" id="direktt_cross_sell_admin_issuance" value="yes" <?php checked( $cross_sell_admin_issuance ); ?> />
+                        <label for="direktt_cross_sell_admin_issuance"><span class="description"><?php echo esc_html__( 'When enabled, a notification will be sent to the admin when coupon is issued.', 'direktt-cross-sell' ); ?></span></label>
+                    </td>
+                </tr>
+                <tr id="direktt-cross-sell-settings-mt-admin-issuance-row">
+                    <th scope="row"><label for="direktt_cross_sell_admin_issuance_template"><?php echo esc_html__( 'Message Template', 'direktt-cross-sell' ); ?></label></th>
+                    <td>
+                        <select name="direktt_cross_sell_admin_issuance_template" id="direktt_cross_sell_admin_issuance_template">
+                            <option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
+                            <?php foreach ( $template_posts as $post ) : ?>
+                                <option value="<?php echo esc_attr( $post->ID ); ?>" <?php selected( $cross_sell_admin_issuance_template, $post->ID ); ?>>
+                                    <?php echo esc_html( $post->post_title ); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="description"><?php echo esc_html__( 'You can use following dynamic placeholders in this template:', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#TODO#' ); ?></code><?php echo esc_html__( ' - TODO.', 'direktt-cross-sell' ); ?></p>
+                    </td>
+                </tr>
+			</table>
+			<h3><?php echo esc_html__( 'Coupon Usage', 'direktt-cross-sell' ); ?></h3>
+			<h3><?php echo esc_html__( 'Send to Subscriber', 'direktt-cross-sell' ); ?></h3>
+			<table class="form-table direktt-cross-sell-table">
+				<tr>
+                    <th scope="row"><label for="direktt_cross_sell_user_usage"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
+                    <td>
+                        <input type="checkbox" name="direktt_cross_sell_user_usage" id="direktt_cross_sell_user_usage" value="yes" <?php checked( $cross_sell_user_usage ); ?> />
+                        <label for="direktt_cross_sell_user_usage"><span class="description"><?php echo esc_html__( 'When enabled, a notification will be sent to the subscriber when their coupon is used.', 'direktt-cross-sell' ); ?></span></label>
+                    </td>
+                </tr>
+                <tr id="direktt-cross-sell-settings-mt-user-usage-row">
+                    <th scope="row"><label for="direktt_cross_sell_user_usage_template"><?php echo esc_html__( 'Message Template', 'direktt-cross-sell' ); ?></label></th>
+                    <td>
+                        <select name="direktt_cross_sell_user_usage_template" id="direktt_cross_sell_user_usage_template">
+                            <option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
+                            <?php foreach ( $template_posts as $post ) : ?>
+                                <option value="<?php echo esc_attr( $post->ID ); ?>" <?php selected( $cross_sell_user_usage_template, $post->ID ); ?>>
+                                    <?php echo esc_html( $post->post_title ); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="description"><?php echo esc_html__( 'You can use following dynamic placeholders in this template:', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#TODO#' ); ?></code><?php echo esc_html__( ' - TODO.', 'direktt-cross-sell' ); ?></p>
+                    </td>
+                </tr>
+			</table>
+			<h3><?php echo esc_html__( 'Send to Admin', 'direktt-cross-sell' ); ?></h3>
+			<table class="form-table direktt-cross-sell-table">
+				<tr>
+                    <th scope="row"><label for="direktt_cross_sell_admin_usage"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
+                    <td>
+                        <input type="checkbox" name="direktt_cross_sell_admin_usage" id="direktt_cross_sell_admin_usage" value="yes" <?php checked( $cross_sell_admin_usage ); ?> />
+                        <label for="direktt_cross_sell_admin_usage"><span class="description"><?php echo esc_html__( 'When enabled, a notification will be sent to the admin when coupon is used.', 'direktt-cross-sell' ); ?></span></label>
+                    </td>
+                </tr>
+                <tr id="direktt-cross-sell-settings-mt-admin-usage-row">
+                    <th scope="row"><label for="direktt_cross_sell_admin_usage_template"><?php echo esc_html__( 'Message Template', 'direktt-cross-sell' ); ?></label></th>
+                    <td>
+                        <select name="direktt_cross_sell_admin_usage_template" id="direktt_cross_sell_admin_usage_template">
+                            <option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
+                            <?php foreach ( $template_posts as $post ) : ?>
+                                <option value="<?php echo esc_attr( $post->ID ); ?>" <?php selected( $cross_sell_admin_issuance_template, $post->ID ); ?>>
+                                    <?php echo esc_html( $post->post_title ); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="description"><?php echo esc_html__( 'You can use following dynamic placeholders in this template:', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#TODO#' ); ?></code><?php echo esc_html__( ' - TODO.', 'direktt-cross-sell' ); ?></p>
+                    </td>
+                </tr>
 			</table>
 
 			<?php submit_button( esc_html__( 'Save Settings', 'direktt-cross-sell' ) ); ?>
@@ -540,194 +673,6 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 						<?php endforeach; ?>
 					</select>
 					<p class="description"><?php echo esc_html__( 'Partner users with this tag will be able to validate coupons.', 'direktt-cross-sell' ); ?></p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="direktt_cross_sell_qr_code_image"><?php echo esc_html__( 'QR Code Logo', 'direktt-cross-sell' ); ?></label></th>
-				<td>
-					<input type="text" id="direktt_cross_sell_qr_code_image" name="direktt_cross_sell_qr_code_image" value="<?php echo esc_attr( $qr_code_image ?? '' ); ?>" />
-					<input type="button" id="direktt_cross_sell_qr_code_image_button" class="button" value="<?php echo esc_html__( 'Choose Image', 'direktt-cross-sell' ); ?>" />
-					<p class="description"><?php echo esc_html__( 'Optional Logo/Image to Display at Center of QR Code', 'direktt-cross-sell' ); ?></p>
-					<script>
-						jQuery( document ).ready(function($) {
-							var mediaUploader;
-
-							$( '#direktt_cross_sell_qr_code_image_button' ).click(function(e) {
-								e.preventDefault();
-
-								// If the uploader object has already been created, reopen it
-								if (mediaUploader) {
-									mediaUploader.open();
-									return;
-								}
-
-								// Create the media uploader
-								mediaUploader = wp.media.frames.file_frame = wp.media({
-									title: '<?php echo esc_js( __( 'Choose Image', 'direktt-cross-sell' ) ); ?>',
-									button: {
-										text: '<?php echo esc_js( __( 'Choose Image', 'direktt-cross-sell' ) ); ?>'
-									},
-									multiple: false
-								});
-
-								// When an image is selected, run a callback
-								mediaUploader.on( 'select', function() {
-									var attachment = mediaUploader.state().get( 'selection' ).first().toJSON();
-									$( '#direktt_cross_sell_qr_code_image' ).val( attachment.url );
-									$( '#direktt_cross_sell_qr_code_image' ).trigger( 'change' );
-								});
-
-								// Open the uploader dialog
-								mediaUploader.open();
-							});
-						});
-					</script>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="direktt_cross_sell_qr_code_color"><?php echo esc_html__( 'QR Code Color', 'direktt-cross-sell' ); ?></label></th>
-				<td>
-					<input type="text" id="direktt_cross_sell_qr_code_color" name="direktt_cross_sell_qr_code_color" value="<?php echo esc_attr( $qr_code_color ?? '#000000' ); ?>" />
-					<p class="description"><?php echo esc_html__( 'Optional Color of Dots in the QR Code', 'direktt-cross-sell' ); ?></p>
-					<script>
-						jQuery( document ).ready( function($) {
-							$( '#direktt_cross_sell_qr_code_color' ).wpColorPicker();
-						});
-					</script>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="direktt_cross_sell_qr_code_bg_color"><?php echo esc_html__( 'QR Code Background Color', 'direktt-cross-sell' ); ?></label></th>
-				<td>
-					<input type="text" id="direktt_cross_sell_qr_code_bg_color" name="direktt_cross_sell_qr_code_bg_color" value="<?php echo esc_attr( $qr_code_bg_color ?? '#ffffff' ); ?>" />
-					<p class="description"><?php echo esc_html__( 'Optional Color of the QR Code Background.', 'direktt-cross-sell' ); ?></p>
-					<script>
-						jQuery( document ).ready(function($) {
-							$( '#direktt_cross_sell_qr_code_bg_color' ).wpColorPicker();
-						});
-					</script>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="direktt-cross-sell-qr-wrapper"><?php echo esc_html__( 'QR Code Preview', 'direktt-cross-sell' ); ?></label></th>
-				<td>
-					<div class="direktt-cross-sell-qr-canvas-wrapper">
-						<div id="direktt-cross-sell-qr-canvas"></div>
-					</div>
-					<?php
-					$actionObject = array(
-						'action' => array(
-							'type'    => 'link',
-							'params'  => array(
-								'url'    => 'direktt.com',
-								'target' => 'browser',
-							),
-							'retVars' => array(),
-						),
-					);
-					?>
-					<script type="text/javascript">
-						const qrCode = new QRCodeStyling({
-							width: 350,
-							height: 350,
-							type: "svg",
-							data: '<?php echo wp_json_encode( $actionObject ); ?>',
-							image: '<?php echo $qr_code_image ? esc_js( $qr_code_image ) : ''; ?>',
-							dotsOptions: {
-								color: '<?php echo $qr_code_color ? esc_js( $qr_code_color ) : '#000000'; ?>',
-								type: "rounded"
-							},
-							backgroundOptions: {
-								color: '<?php echo $qr_code_bg_color ? esc_js( $qr_code_bg_color ) : '#ffffff'; ?>',
-							},
-							imageOptions: {
-								crossOrigin: "anonymous",
-								margin: 20
-							}
-						});
-
-						qrCode.append(document.getElementById("direktt-cross-sell-qr-canvas"));
-
-						jQuery(document).ready(function($) {
-							$('#direktt_cross_sell_qr_code_image').on('change', function() {
-								var newQrCode = new QRCodeStyling({
-									width: 350,
-									height: 350,
-									type: "svg",
-									data: '<?php echo wp_json_encode( $actionObject ); ?>',
-									image: $( '#direktt_cross_sell_qr_code_image' ).val() ? $( '#direktt_cross_sell_qr_code_image' ).val() : '',
-									dotsOptions: {
-										color: $( '#direktt_cross_sell_qr_code_color' ).val() ? $( '#direktt_cross_sell_qr_code_color' ).val() : '#000000',
-										type: "rounded"
-									},
-									backgroundOptions: {
-										color: $( '#direktt_cross_sell_qr_code_bg_color' ).val() ? $( '#direktt_cross_sell_qr_code_bg_color' ).val() : '#ffffff',
-									},
-									imageOptions: {
-										crossOrigin: "anonymous",
-										margin: 20
-									}
-								});
-
-								$( '#direktt-cross-sell-qr-canvas' ).empty();
-								newQrCode.append( document.getElementById( "direktt-cross-sell-qr-canvas" ) );
-							});
-							$( '#direktt_cross_sell_qr_code_color' ).wpColorPicker({
-								change: function( event, ui ) {
-									let color = ui.color.toString();
-
-									var newQrCode = new QRCodeStyling({
-										width: 350,
-										height: 350,
-										type: "svg",
-										data: '<?php echo wp_json_encode( $actionObject ); ?>',
-										image: $( '#direktt_cross_sell_qr_code_image' ).val() ? $( '#direktt_cross_sell_qr_code_image' ).val() : '',
-										dotsOptions: {
-											color: color,
-											type: "rounded"
-										},
-										backgroundOptions: {
-											color: $( '#direktt_cross_sell_qr_code_bg_color' ).val() ? $( '#direktt_cross_sell_qr_code_bg_color' ).val() : '#ffffff',
-										},
-										imageOptions: {
-											crossOrigin: "anonymous",
-											margin: 20
-										}
-									});
-
-									$( '#direktt-cross-sell-qr-canvas' ).empty();
-									newQrCode.append( document.getElementById( "direktt-cross-sell-qr-canvas" ) );
-								}
-							});
-							$( '#direktt_cross_sell_qr_code_bg_color' ).wpColorPicker({
-								change: function( event, ui ) {
-									let color = ui.color.toString();
-
-									var newQrCode = new QRCodeStyling({
-										width: 350,
-										height: 350,
-										type: "svg",
-										data: '<?php echo wp_json_encode( $actionObject ); ?>',
-										image: $( '#direktt_cross_sell_qr_code_image' ).val() ? $( '#direktt_cross_sell_qr_code_image' ).val() : '',
-										dotsOptions: {
-											color: $( '#direktt_cross_sell_qr_code_color' ).val() ? $( '#direktt_cross_sell_qr_code_color' ).val() : '#000000',
-											type: "rounded"
-										},
-										backgroundOptions: {
-											color: color,
-										},
-										imageOptions: {
-											crossOrigin: "anonymous",
-											margin: 20
-										}
-									});
-
-									$( '#direktt-cross-sell-qr-canvas' ).empty();
-									newQrCode.append( document.getElementById( "direktt-cross-sell-qr-canvas" ) );
-								}
-							});
-						});
-					</script>
 				</td>
 			</tr>
 		</tbody>
@@ -1170,22 +1115,6 @@ function save_direktt_cross_sell_partner_meta( $post_id ) {
 			$post_id,
 			'direktt_cross_sell_qr_code_bg_color',
 			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_qr_code_bg_color'] ) )
-		);
-	}
-}
-
-function direktt_cross_sell_partners_enqueue_scripts( $hook ) {
-	$screen = get_current_screen();
-	if ( in_array( $hook, array( 'post.php', 'post-new.php' ) ) && $screen->post_type === 'direkttcspartners' ) {
-		wp_enqueue_media();
-		wp_enqueue_style( 'wp-color-picker' );
-		wp_enqueue_script( 'wp-color-picker' );
-		wp_enqueue_script(
-			'qr-code-styling', // Handle
-			plugin_dir_url( __DIR__ ) . 'direktt/public/js/qr-code-styling.js', // Source
-			array(), // Dependencies (none in this case)
-			filemtime( plugin_dir_path( __DIR__ ) . 'direktt/public/js/qr-code-styling.js' ),
-			false
 		);
 	}
 }
@@ -2532,19 +2461,8 @@ function direktt_cross_sell_user_can_validate( $partner_id ) {
 	return false;
 }
 
-function direktt_cross_sell_enqueue_popup_styles() {
-    global $direktt_cs_enqueue_popup_styles;
-    if ( $direktt_cs_enqueue_popup_styles ) {
-        wp_enqueue_script( 'jquery' );
-        wp_enqueue_style( 'direktt-cross-sell-popup', plugin_dir_url( __FILE__ ) . 'assets/css/direktt-popup.css', array(), '1.0.0' );
-    }
-}
-
 function direktt_cross_sell_coupon_validation() {
 	global $wpdb;
-
-    global $direktt_cs_enqueue_popup_styles;
-    $direktt_cs_enqueue_popup_styles = true;
 
 	if ( isset( $_GET['coupon_code'] ) ) {
 		$coupon_code     = sanitize_text_field( wp_unslash( $_GET['coupon_code'] ) );
