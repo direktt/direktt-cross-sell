@@ -300,7 +300,7 @@ function direktt_cross_sell_settings() {
 			</table>
 			<h2 class="title"><?php echo esc_html__( 'Messages', 'direktt-cross-sell' ); ?></h2>
 			<h3><?php echo esc_html__( 'Coupon Issuance', 'direktt-cross-sell' ); ?></h3>
-			<h3><?php echo esc_html__( 'Send to Subscriber', 'direktt-cross-sell' ); ?></h3>
+			<h3><?php echo esc_html__( 'Send Message to Subscriber', 'direktt-cross-sell' ); ?></h3>
 			<table class="form-table direktt-cross-sell-table">
 				<tr>
                     <th scope="row"><label for="direktt_cross_sell_user_issuance"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
@@ -325,7 +325,7 @@ function direktt_cross_sell_settings() {
                     </td>
                 </tr>
 			</table>
-			<h3><?php echo esc_html__( 'Send to Admin', 'direktt-cross-sell' ); ?></h3>
+			<h3><?php echo esc_html__( 'Send Message to Admin', 'direktt-cross-sell' ); ?></h3>
 			<table class="form-table direktt-cross-sell-table">
 				<tr>
                     <th scope="row"><label for="direktt_cross_sell_admin_issuance"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
@@ -351,7 +351,7 @@ function direktt_cross_sell_settings() {
                 </tr>
 			</table>
 			<h3><?php echo esc_html__( 'Coupon Usage', 'direktt-cross-sell' ); ?></h3>
-			<h3><?php echo esc_html__( 'Send to Subscriber', 'direktt-cross-sell' ); ?></h3>
+			<h3><?php echo esc_html__( 'Send Message to Subscriber', 'direktt-cross-sell' ); ?></h3>
 			<table class="form-table direktt-cross-sell-table">
 				<tr>
                     <th scope="row"><label for="direktt_cross_sell_user_usage"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
@@ -376,7 +376,7 @@ function direktt_cross_sell_settings() {
                     </td>
                 </tr>
 			</table>
-			<h3><?php echo esc_html__( 'Send to Admin', 'direktt-cross-sell' ); ?></h3>
+			<h3><?php echo esc_html__( 'Send Message to Admin', 'direktt-cross-sell' ); ?></h3>
 			<table class="form-table direktt-cross-sell-table">
 				<tr>
                     <th scope="row"><label for="direktt_cross_sell_admin_usage"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
