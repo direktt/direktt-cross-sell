@@ -235,9 +235,9 @@ function direktt_cross_sell_settings() {
 			<h2 class="title"><?php echo esc_html__( 'General Settings', 'direktt-cross-sell' ); ?></h2>
 			<table class="form-table direktt-cross-sell-table">
 				<tr>
-					<th scope="row"><label for="direktt_cross_sell_check_slug"><?php echo esc_html__( 'Coupon Validation Slug', 'direktt-cross-sell' ); ?></label></th>
+					<th scope="row"><label for="direktt_cross_sell_check_slug"><?php echo esc_html__( 'Coupon Validation Page Slug', 'direktt-cross-sell' ); ?></label></th>
 					<td>
-						<input type="text" name="direktt_cross_sell_check_slug" id="direktt_cross_sell_check_slug" value="<?php echo esc_attr( $check_slug ); ?>" size="80" />
+						<input type="text" name="direktt_cross_sell_check_slug" id="direktt_cross_sell_check_slug" value="<?php echo esc_attr( $check_slug ); ?>" size="40" />
 						<p class="description"><?php esc_html_e( 'Slug of the page with the Cross-Sell Coupon Validation shortcode', 'direktt-cross-sell' ); ?></p>
 					</td>
 				</tr>
@@ -298,22 +298,20 @@ function direktt_cross_sell_settings() {
                     </td>
                 </tr>
 			</table>
-			<h2 class="title"><?php echo esc_html__( 'Messages', 'direktt-cross-sell' ); ?></h2>
-			<h3><?php echo esc_html__( 'Coupon Issuance', 'direktt-cross-sell' ); ?></h3>
-			<h3><?php echo esc_html__( 'Send Message to Subscriber', 'direktt-cross-sell' ); ?></h3>
+			<h2 class="title"><?php echo esc_html__( 'Coupon Issuance Messages', 'direktt-cross-sell' ); ?></h2>
 			<table class="form-table direktt-cross-sell-table">
 				<tr>
-                    <th scope="row"><label for="direktt_cross_sell_user_issuance"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
+                    <th scope="row"><label for="direktt_cross_sell_user_issuance"><?php echo esc_html__( 'Send to Subscriber', 'direktt-cross-sell' ); ?></label></th>
                     <td>
                         <input type="checkbox" name="direktt_cross_sell_user_issuance" id="direktt_cross_sell_user_issuance" value="yes" <?php checked( $cross_sell_user_issuance ); ?> />
-                        <label for="direktt_cross_sell_user_issuance"><span class="description"><?php echo esc_html__( 'When enabled, a notification will be sent to the subscriber when coupon is issued to them.', 'direktt-cross-sell' ); ?></span></label>
+                        <label for="direktt_cross_sell_user_issuance"><span class="description"><?php echo esc_html__( 'When enabled, a message will be sent to the subscriber when coupon is issued to them.', 'direktt-cross-sell' ); ?></span></label>
                     </td>
                 </tr>
                 <tr id="direktt-cross-sell-settings-mt-user-issuance-row">
-                    <th scope="row"><label for="direktt_cross_sell_user_issuance_template"><?php echo esc_html__( 'Message Template', 'direktt-cross-sell' ); ?></label></th>
+                    <th scope="row"></th>
                     <td>
                         <select name="direktt_cross_sell_user_issuance_template" id="direktt_cross_sell_user_issuance_template">
-                            <option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
+                            <option value="0"><?php echo esc_html__( 'Select Message Template', 'direktt-cross-sell' ); ?></option>
                             <?php foreach ( $template_posts as $post ) : ?>
                                 <option value="<?php echo esc_attr( $post->ID ); ?>" <?php selected( $cross_sell_user_issuance_template, $post->ID ); ?>>
                                     <?php echo esc_html( $post->post_title ); ?>
@@ -324,21 +322,18 @@ function direktt_cross_sell_settings() {
                         <p class="description"><code><?php echo esc_html( '#TODO#' ); ?></code><?php echo esc_html__( ' - TODO.', 'direktt-cross-sell' ); ?></p>
                     </td>
                 </tr>
-			</table>
-			<h3><?php echo esc_html__( 'Send Message to Admin', 'direktt-cross-sell' ); ?></h3>
-			<table class="form-table direktt-cross-sell-table">
 				<tr>
-                    <th scope="row"><label for="direktt_cross_sell_admin_issuance"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
+                    <th scope="row"><label for="direktt_cross_sell_admin_issuance"><?php echo esc_html__( 'Send to Admin', 'direktt-cross-sell' ); ?></label></th>
                     <td>
                         <input type="checkbox" name="direktt_cross_sell_admin_issuance" id="direktt_cross_sell_admin_issuance" value="yes" <?php checked( $cross_sell_admin_issuance ); ?> />
-                        <label for="direktt_cross_sell_admin_issuance"><span class="description"><?php echo esc_html__( 'When enabled, a notification will be sent to the admin when coupon is issued.', 'direktt-cross-sell' ); ?></span></label>
+                        <label for="direktt_cross_sell_admin_issuance"><span class="description"><?php echo esc_html__( 'When enabled, a message will be sent to the admin when coupon is issued.', 'direktt-cross-sell' ); ?></span></label>
                     </td>
                 </tr>
                 <tr id="direktt-cross-sell-settings-mt-admin-issuance-row">
-                    <th scope="row"><label for="direktt_cross_sell_admin_issuance_template"><?php echo esc_html__( 'Message Template', 'direktt-cross-sell' ); ?></label></th>
+                    <th scope="row"></label></th>
                     <td>
                         <select name="direktt_cross_sell_admin_issuance_template" id="direktt_cross_sell_admin_issuance_template">
-                            <option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
+                            <option value="0"><?php echo esc_html__( 'Select Message Template', 'direktt-cross-sell' ); ?></option>
                             <?php foreach ( $template_posts as $post ) : ?>
                                 <option value="<?php echo esc_attr( $post->ID ); ?>" <?php selected( $cross_sell_admin_issuance_template, $post->ID ); ?>>
                                     <?php echo esc_html( $post->post_title ); ?>
@@ -350,21 +345,20 @@ function direktt_cross_sell_settings() {
                     </td>
                 </tr>
 			</table>
-			<h3><?php echo esc_html__( 'Coupon Usage', 'direktt-cross-sell' ); ?></h3>
-			<h3><?php echo esc_html__( 'Send Message to Subscriber', 'direktt-cross-sell' ); ?></h3>
+			<h2 class="title"><?php echo esc_html__( 'Coupon Usage Messages', 'direktt-cross-sell' ); ?></h2>
 			<table class="form-table direktt-cross-sell-table">
 				<tr>
-                    <th scope="row"><label for="direktt_cross_sell_user_usage"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
+                    <th scope="row"><label for="direktt_cross_sell_user_usage"><?php echo esc_html__( 'Send to Subscriber', 'direktt-cross-sell' ); ?></label></th>
                     <td>
                         <input type="checkbox" name="direktt_cross_sell_user_usage" id="direktt_cross_sell_user_usage" value="yes" <?php checked( $cross_sell_user_usage ); ?> />
-                        <label for="direktt_cross_sell_user_usage"><span class="description"><?php echo esc_html__( 'When enabled, a notification will be sent to the subscriber when their coupon is used.', 'direktt-cross-sell' ); ?></span></label>
+                        <label for="direktt_cross_sell_user_usage"><span class="description"><?php echo esc_html__( 'When enabled, a message will be sent to the subscriber when their coupon is used.', 'direktt-cross-sell' ); ?></span></label>
                     </td>
                 </tr>
                 <tr id="direktt-cross-sell-settings-mt-user-usage-row">
-                    <th scope="row"><label for="direktt_cross_sell_user_usage_template"><?php echo esc_html__( 'Message Template', 'direktt-cross-sell' ); ?></label></th>
+                    <th scope="row"></label></th>
                     <td>
                         <select name="direktt_cross_sell_user_usage_template" id="direktt_cross_sell_user_usage_template">
-                            <option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
+                            <option value="0"><?php echo esc_html__( 'Select Message Template', 'direktt-cross-sell' ); ?></option>
                             <?php foreach ( $template_posts as $post ) : ?>
                                 <option value="<?php echo esc_attr( $post->ID ); ?>" <?php selected( $cross_sell_user_usage_template, $post->ID ); ?>>
                                     <?php echo esc_html( $post->post_title ); ?>
@@ -375,21 +369,18 @@ function direktt_cross_sell_settings() {
                         <p class="description"><code><?php echo esc_html( '#TODO#' ); ?></code><?php echo esc_html__( ' - TODO.', 'direktt-cross-sell' ); ?></p>
                     </td>
                 </tr>
-			</table>
-			<h3><?php echo esc_html__( 'Send Message to Admin', 'direktt-cross-sell' ); ?></h3>
-			<table class="form-table direktt-cross-sell-table">
 				<tr>
-                    <th scope="row"><label for="direktt_cross_sell_admin_usage"><?php echo esc_html__( 'Enable', 'direktt-cross-sell' ); ?></label></th>
+                    <th scope="row"><label for="direktt_cross_sell_admin_usage"><?php echo esc_html__( 'Send to Admin', 'direktt-cross-sell' ); ?></label></th>
                     <td>
                         <input type="checkbox" name="direktt_cross_sell_admin_usage" id="direktt_cross_sell_admin_usage" value="yes" <?php checked( $cross_sell_admin_usage ); ?> />
-                        <label for="direktt_cross_sell_admin_usage"><span class="description"><?php echo esc_html__( 'When enabled, a notification will be sent to the admin when coupon is used.', 'direktt-cross-sell' ); ?></span></label>
+                        <label for="direktt_cross_sell_admin_usage"><span class="description"><?php echo esc_html__( 'When enabled, a message will be sent to the admin when coupon is used.', 'direktt-cross-sell' ); ?></span></label>
                     </td>
                 </tr>
                 <tr id="direktt-cross-sell-settings-mt-admin-usage-row">
-                    <th scope="row"><label for="direktt_cross_sell_admin_usage_template"><?php echo esc_html__( 'Message Template', 'direktt-cross-sell' ); ?></label></th>
+                    <th scope="row"></label></th>
                     <td>
                         <select name="direktt_cross_sell_admin_usage_template" id="direktt_cross_sell_admin_usage_template">
-                            <option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
+                            <option value="0"><?php echo esc_html__( 'Select Message Template', 'direktt-cross-sell' ); ?></option>
                             <?php foreach ( $template_posts as $post ) : ?>
                                 <option value="<?php echo esc_attr( $post->ID ); ?>" <?php selected( $cross_sell_admin_issuance_template, $post->ID ); ?>>
                                     <?php echo esc_html( $post->post_title ); ?>
@@ -1201,7 +1192,7 @@ function direktt_cross_sell_coupon_groups_render_custom_box( $post ) {
 			<th scope="row"><label for="direktt_cross_sell_group_template"><?php echo esc_html__( 'Message Template', 'direktt-cross-sell' ); ?></label></th>
 			<td>
 				<select name="direktt_cross_sell_group_template" id="direktt_cross_sell_group_template">
-					<option value="0"><?php echo esc_html__( 'Select Template', 'direktt-cross-sell' ); ?></option>
+					<option value="0"><?php echo esc_html__( 'Select Message Template', 'direktt-cross-sell' ); ?></option>
 					<?php foreach ( $templates as $template ) : ?>
 						<option value="<?php echo esc_attr( $template['value'] ); ?>" <?php selected( $group_template, $template['value'] ); ?>>
 							<?php echo esc_html( $template['title'] ); ?>
