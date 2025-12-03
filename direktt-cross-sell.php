@@ -1452,7 +1452,7 @@ function direktt_cross_sell_get_partner_coupon_groups( $partner_id ) {
 }
 
 function direktt_cross_sell_user_can_review() {
-	$direktt_user = Direktt_User::direktt_get_current_user();;
+	$direktt_user = Direktt_User::direktt_get_current_user();
 
 	// Always allow admin
 	if ( class_exists( 'Direktt_User' ) && Direktt_User::is_direktt_admin() ) {
@@ -1515,7 +1515,7 @@ function direktt_cross_sell_setup_profile_tool() {
 
 function direktt_cross_sell_process_use_coupon( $coupon ) {
 	// TODO testirati ovo
-	$direktt_user = Direktt_User::direktt_get_current_user();;
+	$direktt_user = Direktt_User::direktt_get_current_user();
 	if ( ! $direktt_user ) {
 		return;
 	}
@@ -2234,7 +2234,7 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 
 function direktt_cross_sell_my_coupons() {
 
-	$direktt_user = Direktt_User::direktt_get_current_user();;
+	$direktt_user = Direktt_User::direktt_get_current_user();
 	global $wpdb;
 
 	$subscription_id = $direktt_user['direktt_user_id'];
@@ -2422,7 +2422,7 @@ function direktt_cross_sell_get_partner_and_group_by_coupon_guid( $coupon_guid )
 }
 
 function direktt_cross_sell_user_can_validate( $partner_id ) {
-	$direktt_user = Direktt_User::direktt_get_current_user();;
+	$direktt_user = Direktt_User::direktt_get_current_user();
 
 	// Always allow admin
 	if ( class_exists( 'Direktt_User' ) && Direktt_User::is_direktt_admin() ) {
@@ -2687,7 +2687,7 @@ function direktt_cross_sell_render_profile_tool() {
 }
 
 function direktt_cross_sell_user_tool() {
-	$direktt_user = Direktt_User::direktt_get_current_user();;
+	$direktt_user = Direktt_User::direktt_get_current_user();
 	global $wpdb;
 	$table = $wpdb->prefix . 'direktt_cross_sell_issued';
 	$now   = current_time( 'mysql' );
@@ -3106,7 +3106,7 @@ function direktt_cross_sell_user_tool() {
 }
 
 function direktt_cross_sell_on_issue_coupon( $request ) {
-	$direktt_user = Direktt_User::direktt_get_current_user();;
+	$direktt_user = Direktt_User::direktt_get_current_user();
 	$direktt_receiver_user_id = $direktt_user['direktt_user_id'] ?? '';
 	$coupon_group_id          = intval( $request['coupon_group_id'] ?? 0 );
 	$partner_id               = intval( $request['partner_id'] ?? 0 );
