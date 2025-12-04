@@ -1777,17 +1777,17 @@ function direktt_cross_sell_render_use_coupon( $use_coupon_id ) {
                 jQuery( document ).ready( function($) {
                     $( 'input[name="direktt_cs_use_coupon_btn"]' ).off( 'click' ).on( 'click', function(e) {
                         e.preventDefault();
-                        $( '#direktt-cross-sell-confirm-use' ).fadeIn();
+                        $( '#direktt-cross-sell-confirm-use' ).addClass( 'direktt-popup-on' );
                     });
 
                     $( '#direktt-cross-sell-confirm-use .direktt-popup-no' ).off( 'click' ).on( 'click', function() {
                         event.preventDefault();
-                        $( '#direktt-cross-sell-confirm-use' ).fadeOut();
+                        $( '#direktt-cross-sell-confirm-use' ).removeClass( 'direktt-popup-on' );
                     });
 
                     $( '#direktt-cross-sell-confirm-use .direktt-popup-yes' ).off( 'click' ).on( 'click', function() {
                         event.preventDefault();
-                        $( '#direktt-cross-sell-confirm-use' ).fadeOut();
+                        $( '#direktt-cross-sell-confirm-use' ).removeClass( 'direktt-popup-on' );
                         $( '.direktt-loader-overlay' ).fadeIn();
                         $( 'form' ).append( '<input type="hidden" name="direktt_cs_use_coupon" value="1">' );
                         setTimeout(function() {
@@ -1916,12 +1916,12 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
                     var $popup = $form.find( '.direktt-confirm-popup' );
                     var $loader = $( '.direktt-loader-overlay' );
 
-                    $popup.fadeIn();
+                    $popup.addClass( 'direktt-popup-on' );
 
                     $popup.find( '.direktt-popup-yes' ).off( 'click' ).on( 'click', function () {
                         event.preventDefault();
-                        $popup.fadeOut();
-                        $loader.fadeIn();
+                        $popup.removeClass( 'direktt-popup-on' );
+                        $loader.addClass( 'direktt-popup-on' );
                         $form.append( '<input type="hidden" name="direktt_cs_issue_coupon" value="1">' );
                         setTimeout(function() {
                             $form.submit();
@@ -1930,7 +1930,7 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
 
                     $popup.find( '.direktt-popup-no' ).off( 'click' ).on( 'click', function () {
                         event.preventDefault();
-                        $popup.fadeOut();
+                        $popup.removeClass( 'direktt-popup-on' );
                     });
                 });
             });
@@ -2193,12 +2193,12 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
                 var $popup = $form.find( '.direktt-confirm-popup' );
                 var $loader = $( '.direktt-loader-overlay' );
 
-                $popup.fadeIn();
+                $popup.addClass( 'direktt-popup-on' );
 
                 $popup.find( '.direktt-popup-yes' ).off( 'click' ).on( 'click', function () {
                     event.preventDefault();
-                    $popup.fadeOut();
-                    $loader.fadeIn();
+                    $popup.removeClass( 'direktt-popup-on' );
+                    $loader.addClass( 'direktt-popup-on' );
                     $form.append( '<input type="hidden" name="direktt_cs_invalidate_coupon" value="1">' );
                     setTimeout(function() {
                         $form.submit();
@@ -2207,7 +2207,7 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
 
                 $popup.find( '.direktt-popup-no' ).off( 'click' ).on( 'click', function () {
                     event.preventDefault();
-                    $popup.fadeOut();
+                    $popup.removeClass( 'direktt-popup-on' );
                 });
             });
         });
@@ -2448,7 +2448,13 @@ function direktt_cross_sell_coupon_validation() {
 			$partner_id = $additional_data['partner_id'];
 		} else {
 			ob_start();
+			echo '<div id="direktt-profile-wrapper">';
+			echo '<div id="direktt-profile">';
+			echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service">';
 			echo '<div class="notice notice-error"><p>' . esc_html__( 'The coupon code is not valid', 'direktt-cross-sell' ) . '</p></div>';
+			echo '</div>';
+			echo '</div>';
+			echo '</div>';
 			return ob_get_clean();
 		}
 	} elseif ( isset( $_GET['coupon_id'] ) && isset( $_GET['partner_id'] ) ) {
@@ -2456,14 +2462,26 @@ function direktt_cross_sell_coupon_validation() {
 		$partner_id = intval( $_GET['partner_id'] );
 	} else {
         ob_start();
+		echo '<div id="direktt-profile-wrapper">';
+		echo '<div id="direktt-profile">';
+		echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service">';
         echo '<div class="notice notice-error"><p>' . esc_html__( 'The referenced coupon does not exist or you are not authorized to manage it.', 'direktt-cross-sell' ) . '</p></div>';
+		echo '</div>';
+		echo '</div>';
+		echo '</div>';
 		return ob_get_clean();
 	}
     
 	if ( ! direktt_cross_sell_user_can_validate( $partner_id ) ) {
         ob_start();
+		echo '<div id="direktt-profile-wrapper">';
+		echo '<div id="direktt-profile">';
+		echo '<div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service">';
         echo '<div class="notice notice-error"><p>' . esc_html__( 'The referenced coupon does not exist or you are not authorized to manage it.', 'direktt-cross-sell' ) . '</p></div>';
-        return ob_get_clean();
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+		return ob_get_clean();
 	}
 
 	$notice = ''; // For status flags after redirect
@@ -2478,16 +2496,16 @@ function direktt_cross_sell_coupon_validation() {
 		// WordPress.DB.DirectDatabaseQuery.DirectQuery: Direct query is necessary because we're fetching data from a custom plugin table; $wpdb->get_results() is the official WordPress method for this.
 		// WordPress.DB.DirectDatabaseQuery.NoCaching: Caching is not used here because we want fresh data each time; object caching is not necessary for this query.
 		if ( ! $coupon ) {
-			return '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div>';
+			return '<div id="direktt-profile-wrapper"><div id="direktt-profile"><div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service"><div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div></div></div></div>';
 		}
 
 		$partner_post      = get_post( $coupon->partner_id );
 		$coupon_group_post = get_post( $coupon->coupon_group_id );
         if ( ! $partner_post || ! $coupon_group_post ) {
-            return '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div>';
+            return '<div id="direktt-profile-wrapper"><div id="direktt-profile"><div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service"><div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div></div></div></div>';
         } else {
             if ( $partner_post->post_status !== 'publish' || $coupon_group_post->post_status !== 'publish' ) {
-                return '<div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div>';
+                return '<div id="direktt-profile-wrapper"><div id="direktt-profile"><div id="direktt-profile-data" class="direktt-profile-data-cross-sell-tool direktt-service"><div class="notice notice-error"><p>' . esc_html__( 'Coupon not found.', 'direktt-cross-sell' ) . '</p></div></div></div></div>';
             }
         }
 
@@ -2558,6 +2576,11 @@ function direktt_cross_sell_coupon_validation() {
 
 		// Show "Use Coupon" button with JS confirm, if allowed
 		if ( ! $disable_use ) {
+			add_action( 'wp_enqueue_scripts', function() {
+				if ( ! wp_script_is( 'jquery' ) ) {
+					wp_enqueue_script( 'jquery' );
+				}
+			});
 			?>
 			<form method="post" action="">
                 <?php
@@ -2572,17 +2595,17 @@ function direktt_cross_sell_coupon_validation() {
                 jQuery( document ).ready( function($) {
                     $( 'input[name="direktt_cs_use_coupon_btn"]' ).off( 'click' ).on( 'click', function(e) {
                         e.preventDefault();
-                        $( '#direktt-cross-sell-confirm-use' ).fadeIn();
+                        $( '#direktt-cross-sell-confirm-use' ).addClass( 'direktt-popup-on' );
                     });
 
                     $( '#direktt-cross-sell-confirm-use .direktt-popup-no' ).off( 'click' ).on( 'click', function() {
                         event.preventDefault();
-                        $( '#direktt-cross-sell-confirm-use' ).fadeOut();
+                        $( '#direktt-cross-sell-confirm-use' ).removeClass( 'direktt-popup-on' );
                     });
 
                     $( '#direktt-cross-sell-confirm-use .direktt-popup-yes' ).off( 'click' ).on( 'click', function() {
                         event.preventDefault();
-                        $( '#direktt-cross-sell-confirm-use' ).fadeOut();
+                        $( '#direktt-cross-sell-confirm-use' ).removeClass( 'direktt-popup-on' );
                         $( '.direktt-loader-overlay' ).fadeIn();
                         $( 'form' ).append( '<input type="hidden" name="direktt_cs_use_coupon" value="1">' );
                         setTimeout(function() {
