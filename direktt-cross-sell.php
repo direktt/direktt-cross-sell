@@ -556,10 +556,6 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 	);
 	$partner_ids_for_who_can_edit = get_post_meta( $post->ID, 'direktt_cross_sell_partners_for_who_can_edit', false );
 
-	$qr_code_image    = get_post_meta( $post->ID, 'direktt_cross_sell_qr_code_image', true );
-	$qr_code_color    = get_post_meta( $post->ID, 'direktt_cross_sell_qr_code_color', true );
-	$qr_code_bg_color = get_post_meta( $post->ID, 'direktt_cross_sell_qr_code_bg_color', true );
-
 	wp_nonce_field( 'direktt_cross_sell_save', 'direktt_cross_sell_nonce' );
 	?>
 
@@ -1089,27 +1085,6 @@ function save_direktt_cross_sell_partner_meta( $post_id ) {
 			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_issue_tags'] ) )
 		);
 	}
-	if ( isset( $_POST['direktt_cross_sell_qr_code_image'] ) ) {
-		update_post_meta(
-			$post_id,
-			'direktt_cross_sell_qr_code_image',
-			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_qr_code_image'] ) )
-		);
-	}
-	if ( isset( $_POST['direktt_cross_sell_qr_code_color'] ) ) {
-		update_post_meta(
-			$post_id,
-			'direktt_cross_sell_qr_code_color',
-			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_qr_code_color'] ) )
-		);
-	}
-	if ( isset( $_POST['direktt_cross_sell_qr_code_bg_color'] ) ) {
-		update_post_meta(
-			$post_id,
-			'direktt_cross_sell_qr_code_bg_color',
-			sanitize_text_field( wp_unslash( $_POST['direktt_cross_sell_qr_code_bg_color'] ) )
-		);
-	}
 }
 
 function direktt_cross_sell_enqueue_fe_scripts( $hook ) {
@@ -1120,6 +1095,14 @@ function direktt_cross_sell_enqueue_fe_scripts( $hook ) {
 			plugin_dir_url( __DIR__ ) . 'direktt/public/js/qr-code-styling.js', // Source
 			array(), // Dependencies (none in this case)
 			filemtime( plugin_dir_path( __DIR__ ) . 'direktt/public/js/qr-code-styling.js' ),
+			false
+		);
+
+		wp_enqueue_script(
+			'tinycolor', // Handle
+			plugin_dir_url( __DIR__ ) . 'direktt/public/js/tinycolor.js', // Source
+			array(), // Dependencies (none in this case)
+			filemtime( plugin_dir_path( __DIR__ ) . 'direktt/public/js/tinycolor.js' ), // Version based on file modification time
 			false
 		);
 	}
@@ -2745,10 +2728,6 @@ function direktt_cross_sell_user_tool() {
 			return ob_get_clean();
 		}
 
-		$qr_code_image    = get_post_meta( intval( $coupon->partner_id ), 'direktt_cross_sell_qr_code_image', true );
-		$qr_code_color    = get_post_meta( intval( $coupon->partner_id ), 'direktt_cross_sell_qr_code_color', true );
-		$qr_code_bg_color = get_post_meta( intval( $coupon->partner_id ), 'direktt_cross_sell_qr_code_bg_color', true );
-
 		$check_slug     = get_option( 'direktt_cross_sell_check_slug' );
 		$validation_url = site_url( $check_slug, 'https' );
 
@@ -2777,30 +2756,61 @@ function direktt_cross_sell_user_tool() {
 		</div>
 
 		<script type="text/javascript">
-			const qrCode = new QRCodeStyling({
-				width: 350,
-				height: 350,
-				type: "svg",
-				data: '<?php echo wp_json_encode( $actionObject ); ?>',
-				image: '<?php echo $qr_code_image ? esc_js( $qr_code_image ) : ''; ?>',
-				dotsOptions: {
-					color: '<?php echo $qr_code_color ? esc_js( $qr_code_color ) : '#000000'; ?>',
-					type: "rounded"
-				},
-				backgroundOptions: {
-					color: '<?php echo $qr_code_bg_color ? esc_js( $qr_code_bg_color ) : '#ffffff'; ?>',
-				},
-				imageOptions: {
-					crossOrigin: "anonymous",
-					margin: 20
-				}
-			});
+			document.addEventListener('DOMContentLoaded', function () {
+				function shiftColors(baseColor) {
+					let inputColor = baseColor;
+					if (!inputColor) {
+						inputColor = "#000000"
+					}
 
-			qrCode.append(document.getElementById("direktt-cross-sell-qr-canvas"));
-			/* qrCode.download({
-				name: "qr",
-				extension: "svg"
-			});*/
+					const tc = tinycolor(inputColor);
+					if (tc.isDark()) {
+						// If dark, lighten by 30%
+						return tc.lighten(30).toHexString();
+					} else {
+						// If light, darken by 30%
+						return tc.darken(30).toHexString();
+					}
+				}
+
+				const options = {
+					width: 300,
+					height: 300,
+					type: 'svg',
+					data: '<?php echo wp_json_encode( $actionObject ); ?>',
+					image: direktt_public.direktt_qr_code_logo_url ? direktt_public.direktt_qr_code_logo_url : '',
+					margin: 10,
+					qrOptions: {
+						typeNumber: 0,
+						mode: 'Byte',
+						errorCorrectionLevel: 'Q'
+					},
+					imageOptions: {
+						hideBackgroundDots: true,
+						imageSize: 0.5,
+						margin: 10,
+						crossOrigin: 'anonymous',
+					},
+					dotsOptions: {
+						color: direktt_public.direktt_qr_code_color ? direktt_public.direktt_qr_code_color : '#000000',
+						type: 'rounded'
+					},
+					backgroundOptions: {
+						color: direktt_public.direktt_qr_code_bckg_color ? direktt_public.direktt_qr_code_bckg_color : '#ffffff',
+					},
+					cornersSquareOptions: {
+						color: shiftColors(direktt_public.direktt_qr_code_color),
+						type: 'extra-rounded',
+					},
+					cornersDotOptions: {
+						color: shiftColors(direktt_public.direktt_qr_code_color),
+						type: 'dot',
+					}
+				};
+				const qrCode = new QRCodeStyling(options);
+
+				qrCode.append(document.getElementById("direktt-cross-sell-qr-canvas"));
+			});
 		</script>
 
 		<?php
@@ -2825,12 +2835,6 @@ function direktt_cross_sell_user_tool() {
 			isset( $_POST['direktt_cs_issue_coupon_nonce'] ) &&
 			wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['direktt_cs_issue_coupon_nonce'] ) ), 'direktt_cs_issue_coupon_action' )
 		) {
-
-			$qr_code_image    = get_post_meta( intval( $partner_id ), 'direktt_cross_sell_qr_code_image', true );
-			$qr_code_color    = get_post_meta( intval( $partner_id ), 'direktt_cross_sell_qr_code_color', true );
-			$qr_code_bg_color = get_post_meta( intval( $partner_id ), 'direktt_cross_sell_qr_code_bg_color', true );
-			$qr_code_message  = get_post_meta( intval( $_POST['direktt_coupon_group_id'] ), 'direktt_cross_sell_qr_code_message', true );
-
 			$back_url = remove_query_arg( array( 'coupon_id', 'direktt_action' ) );
 			$back_url = add_query_arg( 'direktt_action', 'view_partner_coupons', $back_url );
 
@@ -2856,7 +2860,7 @@ function direktt_cross_sell_user_tool() {
 					'type'    => 'api',
 					'params'  => array(
 						'actionType'     => 'issue_coupon',
-						'successMessage' => 'Coupon has been succesfully issued!',
+						'successMessage' => esc_html__( 'Coupon has been succesfully issued!', 'direktt-cross-sell' ),
 					),
 					'retVars' => array(
 						'partner_id'      => sanitize_text_field( $partner_id ),
@@ -2879,68 +2883,104 @@ function direktt_cross_sell_user_tool() {
 			</div>
 			<button id="direktt-cross-sell-share" class="ditektt-button button-large"><?php echo esc_html__( 'Share', 'direktt-cross-sell' ); ?></button>
 			<script type="text/javascript">
-				const qrCode = new QRCodeStyling({
-					width: 350,
-					height: 350,
-					type: "svg",
-					data: '<?php echo wp_json_encode( $actionObject ); ?>',
-					image: '<?php echo $qr_code_image ? esc_js( $qr_code_image ) : ''; ?>',
-					dotsOptions: {
-						color: '<?php echo $qr_code_color ? esc_js( $qr_code_color ) : '#000000'; ?>',
-						type: "rounded"
-					},
-					backgroundOptions: {
-						color: '<?php echo $qr_code_bg_color ? esc_js( $qr_code_bg_color ) : '#ffffff'; ?>',
-					},
-					imageOptions: {
-						crossOrigin: "anonymous",
-						margin: 20
+				document.addEventListener('DOMContentLoaded', function () {
+					function shiftColors(baseColor) {
+						let inputColor = baseColor;
+						if (!inputColor) {
+							inputColor = "#000000"
+						}
+
+						const tc = tinycolor(inputColor);
+						if (tc.isDark()) {
+							// If dark, lighten by 30%
+							return tc.lighten(30).toHexString();
+						} else {
+							// If light, darken by 30%
+							return tc.darken(30).toHexString();
+						}
 					}
-				});
 
-				qrCode.append(document.getElementById("direktt-cross-sell-qr-canvas"));
+					const options = {
+						width: 300,
+						height: 300,
+						type: 'svg',
+						data: '<?php echo wp_json_encode( $actionObject ); ?>',
+						image: direktt_public.direktt_qr_code_logo_url ? direktt_public.direktt_qr_code_logo_url : '',
+						margin: 10,
+						qrOptions: {
+							typeNumber: 0,
+							mode: 'Byte',
+							errorCorrectionLevel: 'Q'
+						},
+						imageOptions: {
+							hideBackgroundDots: true,
+							imageSize: 0.5,
+							margin: 10,
+							crossOrigin: 'anonymous',
+						},
+						dotsOptions: {
+							color: direktt_public.direktt_qr_code_color ? direktt_public.direktt_qr_code_color : '#000000',
+							type: 'rounded'
+						},
+						backgroundOptions: {
+							color: direktt_public.direktt_qr_code_bckg_color ? direktt_public.direktt_qr_code_bckg_color : '#ffffff',
+						},
+						cornersSquareOptions: {
+							color: shiftColors(direktt_public.direktt_qr_code_color),
+							type: 'extra-rounded',
+						},
+						cornersDotOptions: {
+							color: shiftColors(direktt_public.direktt_qr_code_color),
+							type: 'dot',
+						}
+					};
+					
+					const qrCode = new QRCodeStyling(options);
 
-				document.getElementById("direktt-cross-sell-share").addEventListener("click", async () => {
-					qrCode.getRawData("png").then(async (blob) => {
-						const img = new Image();
-						img.onload = async () => {
-							const margin = 20; // margin in pixels
-							const bgColor = '<?php echo $qr_code_bg_color ? esc_js( $qr_code_bg_color ) : '#ffffff'; ?>';
-							const canvas = document.createElement("canvas");
-							canvas.width = img.width + margin * 2;
-							canvas.height = img.height + margin * 2;
-							const ctx = canvas.getContext("2d");
+					qrCode.append(document.getElementById("direktt-cross-sell-qr-canvas"));
 
-							// Fill background
-							ctx.fillStyle = bgColor;
-							ctx.fillRect(0, 0, canvas.width, canvas.height);
+					document.getElementById("direktt-cross-sell-share").addEventListener("click", async () => {
+						qrCode.getRawData("png").then(async (blob) => {
+							const img = new Image();
+							img.onload = async () => {
+								const margin = 20; // margin in pixels
+								const bgColor = direktt_public.direktt_qr_code_bckg_color;
+								const canvas = document.createElement("canvas");
+								canvas.width = img.width + margin * 2;
+								canvas.height = img.height + margin * 2;
+								const ctx = canvas.getContext("2d");
 
-							// Draw QR code in center
-							ctx.drawImage(img, margin, margin);
+								// Fill background
+								ctx.fillStyle = bgColor;
+								ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-							// Convert to blob
-							canvas.toBlob(async (newBlob) => {
-								const file = new File([newBlob], "qr-code.png", {
-									type: "image/png"
-								});
+								// Draw QR code in center
+								ctx.drawImage(img, margin, margin);
 
-								if (navigator.canShare && navigator.canShare({
-										files: [file]
-									})) {
-									try {
-										await navigator.share({
-											text: '<?php echo esc_js( $qr_code_message ); ?>',
+								// Convert to blob
+								canvas.toBlob(async (newBlob) => {
+									const file = new File([newBlob], "qr-code.png", {
+										type: "image/png"
+									});
+
+									if (navigator.canShare && navigator.canShare({
 											files: [file]
-										});
-									} catch (err) {
-										alert('<?php echo esc_js( __( 'Share failed:', 'direktt-cross-sell' ) ); ?> ' + err.message);
+										})) {
+										try {
+											await navigator.share({
+												text: '<?php echo esc_js( __( 'Scan this QR code and coupon will be issued to you!', 'direktt-cross-sell' ) ); ?>',
+												files: [file]
+											});
+										} catch (err) {
+											alert('<?php echo esc_js( __( 'Share failed:', 'direktt-cross-sell' ) ); ?> ' + err.message);
+										}
+									} else {
+										alert('<?php echo esc_js( __( 'Your browser does not support sharing files.', 'direktt-cross-sell' ) ); ?>');
 									}
-								} else {
-									alert('<?php echo esc_js( __( 'Your browser does not support sharing files.', 'direktt-cross-sell' ) ); ?>');
-								}
-							}, "image/png");
-						};
-						img.src = URL.createObjectURL(blob);
+								}, "image/png");
+							};
+							img.src = URL.createObjectURL(blob);
+						});
 					});
 				});
 			</script>
