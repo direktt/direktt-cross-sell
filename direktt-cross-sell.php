@@ -321,7 +321,10 @@ function direktt_cross_sell_settings() {
                             <?php endforeach; ?>
                         </select>
                         <p class="description"><?php echo esc_html__( 'You can use following dynamic placeholders in this template:', 'direktt-cross-sell' ); ?></p>
-                        <p class="description"><code><?php echo esc_html( '#TODO#' ); ?></code><?php echo esc_html__( ' - TODO.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#coupon_name#' ); ?></code><?php echo esc_html__( ' - coupon group name.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#partner_name#' ); ?></code><?php echo esc_html__( ' - partner name.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#timestamp_issue#' ); ?></code><?php echo esc_html__( ' - time of coupon issue.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#timestamp_expiry#' ); ?></code><?php echo esc_html__( ' - time of coupon expiry.', 'direktt-cross-sell' ); ?></p>
                     </td>
                 </tr>
 				<tr>
@@ -343,7 +346,14 @@ function direktt_cross_sell_settings() {
                             <?php endforeach; ?>
                         </select>
                         <p class="description"><?php echo esc_html__( 'You can use following dynamic placeholders in this template:', 'direktt-cross-sell' ); ?></p>
-                        <p class="description"><code><?php echo esc_html( '#TODO#' ); ?></code><?php echo esc_html__( ' - TODO.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#coupon_name#' ); ?></code><?php echo esc_html__( ' - coupon group name.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#partner_name#' ); ?></code><?php echo esc_html__( ' - partner name.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#timestamp_issue#' ); ?></code><?php echo esc_html__( ' - time of coupon issue.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#timestamp_expiry#' ); ?></code><?php echo esc_html__( ' - time of coupon expiry.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#issued_count#' ); ?></code><?php echo esc_html__( ' - total number of issued coupons from this group.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#max_issued#' ); ?></code><?php echo esc_html__( ' - number of how many coupons from this group can be issued.', 'direktt-cross-sell' ); ?></p>
+						<p class="description"><code><?php echo esc_html( '#reciever_display_name#' ); ?></code><?php echo esc_html__( ' - display name of the user to whom coupon was issued.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#issuer_display_name#' ); ?></code><?php echo esc_html__( ' - display name of the user who issued the coupon.', 'direktt-cross-sell' ); ?></p>
                     </td>
                 </tr>
 			</table>
@@ -368,7 +378,12 @@ function direktt_cross_sell_settings() {
                             <?php endforeach; ?>
                         </select>
                         <p class="description"><?php echo esc_html__( 'You can use following dynamic placeholders in this template:', 'direktt-cross-sell' ); ?></p>
-                        <p class="description"><code><?php echo esc_html( '#TODO#' ); ?></code><?php echo esc_html__( ' - TODO.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#coupon_name#' ); ?></code><?php echo esc_html__( ' - coupon group name.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#partner_name#' ); ?></code><?php echo esc_html__( ' - partner name.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#timestamp#' ); ?></code><?php echo esc_html__( ' - time of coupon usage.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#usages_left#' ); ?></code><?php echo esc_html__( ' - number of usages left.', 'direktt-cross-sell' ); ?></p>
+						<p class="description"><code><?php echo esc_html( '#reciever_display_name#' ); ?></code><?php echo esc_html__( ' - display name of the user to whom coupon was issued.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#issuer_display_name#' ); ?></code><?php echo esc_html__( ' - display name of the user who issued the coupon.', 'direktt-cross-sell' ); ?></p>
                     </td>
                 </tr>
 				<tr>
@@ -390,7 +405,12 @@ function direktt_cross_sell_settings() {
                             <?php endforeach; ?>
                         </select>
                         <p class="description"><?php echo esc_html__( 'You can use following dynamic placeholders in this template:', 'direktt-cross-sell' ); ?></p>
-                        <p class="description"><code><?php echo esc_html( '#TODO#' ); ?></code><?php echo esc_html__( ' - TODO.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#coupon_name#' ); ?></code><?php echo esc_html__( ' - coupon group name.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#partner_name#' ); ?></code><?php echo esc_html__( ' - partner name.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#timestamp#' ); ?></code><?php echo esc_html__( ' - time of coupon usage.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#usages_left#' ); ?></code><?php echo esc_html__( ' - number of usages left.', 'direktt-cross-sell' ); ?></p>
+						<p class="description"><code><?php echo esc_html( '#reciever_display_name#' ); ?></code><?php echo esc_html__( ' - display name of the user to which coupon was used.', 'direktt-cross-sell' ); ?></p>
+                        <p class="description"><code><?php echo esc_html( '#validator_display_name#' ); ?></code><?php echo esc_html__( ' - display name of the user who validated the coupon.', 'direktt-cross-sell' ); ?></p>
                     </td>
                 </tr>
 			</table>
@@ -1921,7 +1941,7 @@ function direktt_cross_sell_render_one_partner( $partner_id ) {
                     $popup.find( '.direktt-popup-yes' ).off( 'click' ).on( 'click', function () {
                         event.preventDefault();
                         $popup.removeClass( 'direktt-popup-on' );
-                        $loader.addClass( 'direktt-popup-on' );
+                        $loader.fadeIn();
                         $form.append( '<input type="hidden" name="direktt_cs_issue_coupon" value="1">' );
                         setTimeout(function() {
                             $form.submit();
@@ -2198,7 +2218,7 @@ function direktt_cross_sell_render_issued( $subscription_id ) {
                 $popup.find( '.direktt-popup-yes' ).off( 'click' ).on( 'click', function () {
                     event.preventDefault();
                     $popup.removeClass( 'direktt-popup-on' );
-                    $loader.addClass( 'direktt-popup-on' );
+                    $loader.fadeIn();
                     $form.append( '<input type="hidden" name="direktt_cs_invalidate_coupon" value="1">' );
                     setTimeout(function() {
                         $form.submit();
