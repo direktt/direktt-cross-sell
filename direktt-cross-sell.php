@@ -584,21 +584,20 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 		var partners = <?php echo json_encode( $partner_ids_for_who_can_edit ); ?>;
 	</script>
 
-	<table class="direktt-profile-data-cross-sell-tool-table">
+	<table class="direktt-profile-data-cross-sell-tool-table form-table">
 			<thead>
 			<tr>
 				<th scope="row"><label for="direktt_cross_sell_partners_coupon_groups"><?php echo esc_html__( 'Coupon Groups', 'direktt-cross-sell' ); ?></label></th>
 				<td>
 					<?php if ( count( $partners_coupon_groups ) > 0 ) : ?>
-						<ul>
+						<div class="direktt-profile-data-cross-sell-tool-partners-coupon-groups">
 							<?php foreach ( $partners_coupon_groups as $group ) : ?>
-								<li><?php echo esc_html( $group['title'] ); ?></li>
+								<span><?php echo esc_html( $group['title'] ); ?></span>
 							<?php endforeach; ?>
 						</ul>
 					<?php else : ?>
 						<p><?php echo esc_html__( 'No coupon groups assigned to this partner.', 'direktt-cross-sell' ); ?></p>
 					<?php endif; ?>
-					<p class="description"><?php echo esc_html__( 'These are the coupon groups assigned to this partner.', 'direktt-cross-sell' ); ?></p>
 				</td>
 			</tr>
 		</thead>
@@ -653,7 +652,7 @@ function direktt_cross_sell_partners_render_custom_box( $post ) {
 							});
 						})(jQuery);
 					</script>
-					<p class="description"><?php echo esc_html__( 'Select Partners for Which This Partner Can Issue Coupons.', 'direktt-cross-sell' ); ?></p>
+					<p class="description"><?php echo esc_html__( 'Select partners for which this partner can issue coupons.', 'direktt-cross-sell' ); ?></p>
 				</td>
 			</tr>
 			<tr>
@@ -1175,22 +1174,22 @@ function direktt_cross_sell_coupon_groups_render_custom_box( $post ) {
 		<tr>
 			<th scope="row"><label for="direktt_cross_sell_group_validity"><?php echo esc_html__( 'Coupon Validity', 'direktt-cross-sell' ); ?></label></th>
 			<td>
-				<input type="text" name="direktt_cross_sell_group_validity" id="direktt_cross_sell_group_validity" value="<?php echo $group_validity ? intval( $group_validity ) : 0; ?>" /> <?php echo esc_html__( '0 - does not expire', 'direktt-cross-sell' ); ?>
-				<p class="description"><?php echo esc_html__( 'Coupon validity in days. If equals to 0, the coupon does not expire', 'direktt-cross-sell' ); ?></p>
+				<input type="text" name="direktt_cross_sell_group_validity" id="direktt_cross_sell_group_validity" value="<?php echo $group_validity ? intval( $group_validity ) : 0; ?>" /> <?php echo esc_html__( ' days', 'direktt-cross-sell' ); ?>
+				<p class="description"><?php echo esc_html__( 'If equals to 0, the coupon does not expire.', 'direktt-cross-sell' ); ?></p>
 			</td>
 		</tr>
 		<tr>
-			<th scope="row"><label for="direktt_cross_sell_max_usage"><?php echo esc_html__( 'How many times can a single coupon be used?', 'direktt-cross-sell' ); ?></label></th>
+			<th scope="row"><label for="direktt_cross_sell_max_usage"><?php echo esc_html__( 'Uses per Coupon', 'direktt-cross-sell' ); ?></label></th>
 			<td>
-				<input type="text" name="direktt_cross_sell_max_usage" id="direktt_cross_sell_max_usage" value="<?php echo $max_usage !== false && $max_usage !== '' ? intval( $max_usage ) : 1; ?>" /> <?php echo esc_html__( '0 - unlimited', 'direktt-cross-sell' ); ?>
-				<p class="description"><?php echo esc_html__( 'Maximum number of usages per coupon.', 'direktt-cross-sell' ); ?></p>
+				<input type="text" name="direktt_cross_sell_max_usage" id="direktt_cross_sell_max_usage" value="<?php echo $max_usage !== false && $max_usage !== '' ? intval( $max_usage ) : 1; ?>" /> <?php echo esc_html__( ' uses', 'direktt-cross-sell' ); ?>
+				<p class="description"><?php echo esc_html__( '0 means unlimited uses.', 'direktt-cross-sell' ); ?></p>
 			</td>
 		</tr>
 		<tr>
-			<th scope="row"><label for="direktt_cross_sell_max_issuance"><?php echo esc_html__( 'How many coupons can be issued in total?', 'direktt-cross-sell' ); ?></label></th>
+			<th scope="row"><label for="direktt_cross_sell_max_issuance"><?php echo esc_html__( 'Total Coupons', 'direktt-cross-sell' ); ?></label></th>
 			<td>
-				<input type="text" name="direktt_cross_sell_max_issuance" id="direktt_cross_sell_max_issuance" value="<?php echo $max_issuance ? intval( $max_issuance ) : 0; ?>" /> <?php echo esc_html__( '0 - unlimited', 'direktt-cross-sell' ); ?>
-				<p class="description"><?php echo esc_html__( 'Maximum total number of issuances per coupon. If this number is exceeded, the coupon will not be available for issuance', 'direktt-cross-sell' ); ?></p>
+				<input type="text" name="direktt_cross_sell_max_issuance" id="direktt_cross_sell_max_issuance" value="<?php echo $max_issuance ? intval( $max_issuance ) : 0; ?>" /><?php echo esc_html__( ' coupons', 'direktt-cross-sell' ); ?>
+				<p class="description"><?php echo esc_html__( 'Maximum number of issuances per coupon. If this number is exceeded, the coupon will not be available for issuance. 0 means unlimited uses.', 'direktt-cross-sell' ); ?></p>
 			</td>
 		</tr>
 		<tr>
@@ -1204,14 +1203,14 @@ function direktt_cross_sell_coupon_groups_render_custom_box( $post ) {
 						</option>
 					<?php endforeach; ?>
 				</select>
-				<p class="description"><?php echo esc_html__( 'Message Template used when Coupon is issued. If none set, default will be sent', 'direktt-cross-sell' ); ?></p>
+				<p class="description"><?php echo esc_html__( 'Message template used when coupon is issued. If none set, default will be sent.', 'direktt-cross-sell' ); ?></p>
 			</td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="direktt_cross_sell_qr_code_message"><?php echo esc_html__( 'Text for QR Code Sharing', 'direktt-cross-sell' ); ?></label></th>
 			<td>
 				<input type="text" name="direktt_cross_sell_qr_code_message" id="direktt_cross_sell_qr_code_message" value="<?php echo esc_attr( $qr_code_message ); ?>" />
-				<p class="description"><?php echo esc_html__( 'Optional Text to Share With Coupon QR Code', 'direktt-cross-sell' ); ?></p>
+				<p class="description"><?php echo esc_html__( 'Optional text to share with coupon QR code.', 'direktt-cross-sell' ); ?></p>
 			</td>
 		</tr>
 	</table>
